@@ -22,7 +22,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	file \
 	gettext \
 	git \
+	curl \
 	&& rm -rf /var/lib/apt/lists/*
+
+#installation nodejs et npm
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g @dbml/cli
 
 RUN set -eux; \
 	install-php-extensions \
@@ -42,6 +48,9 @@ ENV MERCURE_TRANSPORT_URL=bolt:///data/mercure.db
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+RUN install-php-extensions pdo_pgsql
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
@@ -95,3 +104,11 @@ RUN set -eux; \
 	composer dump-env prod; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
+
+#sf à la place de php bin/console
+RUN echo 'alias sf="php bin/console"' >> /root/.bashrc && \
+    echo 'alias sf="php bin/console"' >> /etc/bash.bashrc
+
+
+	
+

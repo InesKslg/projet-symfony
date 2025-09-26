@@ -1,0 +1,49 @@
+Table "doctrine_migration_versions" {
+  "version" varchar(191) [pk, not null]
+  "executed_at" timestamp [default: `NULL::timestamp without time zone`]
+  "execution_time" int4
+}
+
+Table "photos" {
+  "id" int4 [pk, not null, increment]
+  "photo_url" varchar(255) [not null]
+  "description" varchar(255) [not null]
+  "date_added" timestamp [not null, note: '(DC2Type:datetime_immutable)']
+  "public" bool [not null]
+}
+
+Table "messenger_messages" {
+  "id" int8 [pk, not null, increment]
+  "body" text [not null]
+  "headers" text [not null]
+  "queue_name" varchar(190) [not null]
+  "created_at" timestamp [not null, note: '(DC2Type:datetime_immutable)']
+  "available_at" timestamp [not null, note: '(DC2Type:datetime_immutable)']
+  "delivered_at" timestamp [default: `NULL::timestamp without time zone`, note: '(DC2Type:datetime_immutable)']
+
+  Indexes {
+    delivered_at [type: btree, name: "idx_75ea56e016ba31db"]
+    available_at [type: btree, name: "idx_75ea56e0e3bd61ce"]
+    queue_name [type: btree, name: "idx_75ea56e0fb7336f0"]
+  }
+}
+
+Table "album" {
+  "id" int4 [pk, not null, increment]
+  "categorie" varchar(255) [not null]
+}
+
+Table "album_photos" {
+  "album_id" int4 [not null]
+  "photos_id" int4 [not null]
+
+  Indexes {
+    (album_id, photos_id) [type: btree, name: "album_photos_pkey"]
+    album_id [type: btree, name: "idx_da0ddd6e1137abcf"]
+    photos_id [type: btree, name: "idx_da0ddd6e301ec62"]
+  }
+}
+
+Ref "fk_da0ddd6e1137abcf":"album"."id" < "album_photos"."album_id" [delete: cascade]
+
+Ref "fk_da0ddd6e301ec62":"photos"."id" < "album_photos"."photos_id" [delete: cascade]
