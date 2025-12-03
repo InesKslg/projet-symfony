@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - Galerie{% endblock %}
+
+{% block body %}
+    <h1>Espace d'administration</h1>
+
+    <p>Bienvenue {{ app.user ? app.user.email : 'invité' }} !</p>
+
+    <ul>
+        <li><a href="{{ path('app_album') }}">Gérer les albums</a></li>
+        <li><a href="{{ path('app_photos') }}">Gérer les photos</a></li>
+    </ul>
+
+    <p>
+        <a href="{{ path('app_logout') }}">Déconnexion</a>
+    </p>
+{% endblock %}
