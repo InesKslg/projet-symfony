@@ -21,7 +21,8 @@ security:
       form_login:
         login_path: app_login
         check_path: app_login
-        default_target_path: app_home
+        default_target_path: app_welcome
+        always_use_default_target_path: true
         
 
       logout:
@@ -31,5 +32,5 @@ security:
   access_control:
     - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
-    - { path: ^/, roles: PUBLIC_ACCESS }
+    - { path: ^/welcome, roles: ROLE_USER }
 
