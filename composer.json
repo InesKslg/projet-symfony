@@ -17,6 +17,7 @@
         "doctrine/orm": "^3.5",
         "easycorp/easyadmin-bundle": "^4.29",
         "nelmio/cors-bundle": "^2.6",
+        "pel/pel": "^1.0",
         "phpdocumentor/reflection-docblock": "^5.6",
         "phpstan/phpdoc-parser": "^2.3",
         "runtime/frankenphp-symfony": "^0.2.0",

@@ -46,9 +46,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Photos::class, mappedBy: 'userPhoto')]
     private Collection $photos;
 
+    /**
+     * @var Collection<int, ThemeRequest>
+     */
+    #[ORM\OneToMany(targetEntity: ThemeRequest::class, mappedBy: 'RequestedBy')]
+    private Collection $themeRequests;
+
     public function __construct()
     {
         $this->photos = new ArrayCollection();
+        $this->themeRequests = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -175,6 +182,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($photo->getUserPhoto() === $this) {
                 $photo->setUserPhoto(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ThemeRequest>
+     */
+    public function getThemeRequests(): Collection
+    {
+        return $this->themeRequests;
+    }
+
+    public function addThemeRequest(ThemeRequest $themeRequest): static
+    {
+        if (!$this->themeRequests->contains($themeRequest)) {
+            $this->themeRequests->add($themeRequest);
+            $themeRequest->setRequestedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeThemeRequest(ThemeRequest $themeRequest): static
+    {
+        if ($this->themeRequests->removeElement($themeRequest)) {
+            // set the owning side to null (unless already changed)
+            if ($themeRequest->getRequestedBy() === $this) {
+                $themeRequest->setRequestedBy(null);
             }
         }
 

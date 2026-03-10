@@ -8,7 +8,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User;
 
-
 #[ORM\Entity(repositoryClass: PhotosRepository::class)]
 class Photos
 {
@@ -23,6 +22,7 @@ class Photos
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
+    // Nullable pour pouvoir stocker une date de prise extraite du EXIF si dispo
     #[ORM\Column(type:"datetime_immutable", nullable:true)]
     private ?\DateTimeImmutable $date_prise = null;
 
@@ -35,7 +35,7 @@ class Photos
     #[ORM\ManyToMany(targetEntity: Album::class, mappedBy: 'photos')]
     private Collection $albums;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $localisation = null;
 
     /**
@@ -110,7 +110,7 @@ class Photos
         return $this->localisation;
     }
 
-    public function setLocalisation(string $localisation): static
+    public function setLocalisation(?string $localisation): static
     {
         $this->localisation = $localisation;
         return $this;
@@ -127,9 +127,6 @@ class Photos
         return $this;
     }
 
-    /**
-     * @return Collection<int, Album>
-     */
     public function getAlbums(): Collection
     {
         return $this->albums;
@@ -152,9 +149,6 @@ class Photos
         return $this;
     }
 
-    /**
-     * @return Collection<int, Themes>
-     */
     public function getThemes(): Collection
     {
         return $this->themes;
@@ -182,7 +176,6 @@ class Photos
     public function setUserPhoto(?User $userPhoto): static
     {
         $this->userPhoto = $userPhoto;
-
         return $this;
     }
 }

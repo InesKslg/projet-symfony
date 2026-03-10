@@ -10,11 +10,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use App\Entity\ThemeRequest;
+use App\Form\ThemeRequestType;
+use lsolesen\pel\PelDataWindow;
+use lsolesen\pel\PelJpeg;
+use lsolesen\pel\PelExif;
+
 
 final class ProductController extends AbstractController
 {
     #[Route('/welcome', name: 'app_welcome')]
-    public function welcome(EntityManagerInterface $em): Response
+    public function welcome(Request $request, EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
 
@@ -25,11 +31,32 @@ final class ProductController extends AbstractController
         // Récupérer tous les thèmes pour le <select> du modal
         $themes = $em->getRepository(Themes::class)->findAll();
 
+        // -----------------------------
+        // Formulaire de demande de thème
+        // -----------------------------
+        $themeRequest = new ThemeRequest();
+        $themeRequestForm = $this->createForm(ThemeRequestType::class, $themeRequest);
+        $themeRequestForm->handleRequest($request);
+
+        if ($themeRequestForm->isSubmitted() && $themeRequestForm->isValid()) {
+            $themeRequest->setRequestedBy($user);
+            $themeRequest->setStatus('pending'); // status par défaut
+
+            $em->persist($themeRequest);
+            $em->flush();
+
+            $this->addFlash('success', 'Votre demande de thème a été envoyée !');
+
+            return $this->redirectToRoute('app_welcome');
+        }
+
         return $this->render('product/index.html.twig', [
             'photos' => $privatePhotos,
             'themes' => $themes,
+            'themeRequestForm' => $themeRequestForm->createView(), // <-- essentiel
         ]);
     }
+
 
     #[Route('/upload/photo', name: 'app_upload_photo', methods: ['POST'])]
     public function upload(Request $request, EntityManagerInterface $em): Response
@@ -48,7 +75,7 @@ final class ProductController extends AbstractController
 
         try {
             $file->move($uploadsDir, $filename);
-        } catch (FileException $e) {
+        } catch (\Exception $e) {
             $this->addFlash('error', 'Erreur lors de l\'upload.');
             return $this->redirectToRoute('app_welcome');
         }
@@ -60,7 +87,46 @@ final class ProductController extends AbstractController
         $photo->setDateAdded(new \DateTimeImmutable());
         $photo->setUserPhoto($this->getUser());
 
-        // Ajouter le thème sélectionné
+        // Récupérer EXIF
+        try {
+            $pel = new PelJpeg($uploadsDir.'/'.$filename);
+            $exif = $pel->getExif();
+
+            if ($exif instanceof PelExif) {
+                $tiff = $exif->getTiff();
+                $subIfd = $tiff->getSubIfd();
+
+            // Date de prise
+            $date = $subIfd->getDateTimeOriginal();
+            if ($date) {
+                $photo->setDatePrise(new \DateTimeImmutable($date->format('Y-m-d H:i:s')));
+            } else {
+                // On met la date actuelle si EXIF absent
+                $photo->setDatePrise(new \DateTimeImmutable());
+            }
+
+            // GPS
+            $gps = $tiff->getGps();
+            if ($gps) {
+                $lat = $gps->getLatitude();
+                $lon = $gps->getLongitude();
+                $photo->setLocalisation("{$lat}, {$lon}");
+            } else {
+                // Valeur par défaut si GPS absent
+                $photo->setLocalisation('Non renseignée');
+            }
+            } else {
+                // Si pas d'EXIF du tout, on met des valeurs par défaut
+                $photo->setDatePrise(new \DateTimeImmutable());
+                $photo->setLocalisation('Non renseignée');
+            }
+        } catch (\Exception $e) {
+            // En cas d'erreur de lecture EXIF, on met des valeurs par défaut
+            $photo->setDatePrise(new \DateTimeImmutable());
+            $photo->setLocalisation('Non renseignée');
+        }
+
+        // Thème
         $themeId = $request->request->get('theme_id');
         if ($themeId) {
             $theme = $em->getRepository(Themes::class)->find($themeId);
@@ -75,4 +141,35 @@ final class ProductController extends AbstractController
         $this->addFlash('success', 'Photo ajoutée avec succès !');
         return $this->redirectToRoute('app_welcome');
     }
+
+    #[Route('/photo/{id}/edit', name: 'app_edit_photo', methods:['POST'])]
+    public function edit(Request $request, EntityManagerInterface $em, Photos $photo): Response
+    {
+        $description = $request->request->get('description');
+        $photo->setDescription($description);
+        $photo->setPublic($request->request->get('public') ? true : false);
+
+        // possibilité d'ajouter modification du thème ici
+
+        $em->flush();
+        $this->addFlash('success', 'Photo modifiée !');
+        return $this->redirectToRoute('app_welcome');
+    }
+
+    #[Route('/photo/{id}/delete', name:'app_delete_photo', methods:['POST','DELETE'])]
+    public function delete(EntityManagerInterface $em, Photos $photo): Response
+    {
+        foreach ($photo->getThemes() as $theme) {
+            $photo->removeTheme($theme);
+        }
+
+        $em->flush();
+       
+        $em->remove($photo);
+        $em->flush();
+
+        $this->addFlash('success', 'Photo supprimée !');
+        return $this->redirectToRoute('app_welcome');
+    }
+
 }

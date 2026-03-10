@@ -71,4 +71,5 @@ final class UploadController extends AbstractController
 
         return $this->redirectToRoute('app_welcome');
     }
+    
 }

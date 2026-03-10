@@ -7,6 +7,7 @@
     {% if app.user %}
         <span>Bienvenue, {{ app.user.email }}</span>
         <button id="addMediaBtn">Ajouter un post</button>
+        <button id="requestThemeBtn">Demander un nouveau thème</button>
         <a href="{{ path('app_logout') }}">Déconnexion</a>
     {% else %}
         <a href="{{ path('app_home') }}">Accueil</a>
@@ -25,30 +26,22 @@
 {% else %}
     <div class="gallery">
         {% for photo in photos %}
-            <div class="media-item">
+            <div class="media-item" data-id="{{ photo.id }}">
                 <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
                 <p>{{ photo.description }}</p>
-                <small>{{ photo.localisation }}</small>
-                <span class="label-prive">Privé</span>
+                <span class="label-prive">{{ photo.public ? 'Public' : 'Privé' }}</span>
 
                 <!-- Dépliant infos -->
                 <div class="photo-info" style="display:none; text-align:left; margin-top:5px;">
                     <p><strong>Description :</strong> {{ photo.description }}</p>
                     <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
-                    <p><strong>Date de prise :</strong> 
-                        {% if photo.datePrise %}
-                            {{ photo.datePrise|date('d/m/Y') }}
-                        {% else %}
-                            Non renseignée
-                        {% endif %}
-                    </p>
-                    <p><strong>Thème :</strong> 
-                        {% if photo.themes|length > 0 %}
-                            {{ photo.themes|first.nom }}
-                        {% else %}
-                            Aucun
-                        {% endif %}
-                    </p>
+                    <p><strong>Date de prise :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
+                    <p><strong>Thème :</strong> {% if photo.themes|length > 0 %}{{ photo.themes|first.nom }}{% else %}Aucun{% endif %}</p>
+                    <p><strong>Statut :</strong> {{ photo.public ? 'Public' : 'Privé' }}</p>
+
+                    <!-- Boutons actions -->
+                    <button class="edit-photo-btn">Modifier</button>
+                    <button class="delete-photo-btn">Supprimer</button>
                 </div>
 
                 <!-- Bouton pour déplier -->
@@ -58,22 +51,16 @@
     </div>
 {% endif %}
 
-<!-- MODAL AJOUT PHOTO -->
+<!-- MODAL AJOUT / ÉDITION PHOTO -->
 <div id="addMediaModal" class="modal">
     <div class="modal-content">
-        <h2>Ajouter une nouvelle photo</h2>
+        <h2>Ajouter / Modifier une photo</h2>
         <form action="{{ path('app_upload_photo') }}" method="POST" enctype="multipart/form-data">
             <label>Photo</label>
             <input type="file" name="photo_file" accept="image/*" required>
 
             <label>Description</label>
             <input type="text" name="description" required>
-
-            <label>Localisation</label>
-            <input type="text" name="localisation">
-
-            <label>Date de prise</label>
-            <input type="date" name="date_prise">
 
             <label>Thème</label>
             <select name="theme_id" required>
@@ -97,21 +84,88 @@
     </div>
 </div>
 
+<!-- MODAL DEMANDE DE THEME -->
+<div id="themeRequestModal" class="modal">
+    <div class="modal-content">
+        <h2>Demander un nouveau thème</h2>
+
+        {{ form_start(themeRequestForm) }}
+            {{ form_row(themeRequestForm.title) }}
+            {{ form_row(themeRequestForm.description) }}
+            <button type="submit">Envoyer la demande</button>
+        {{ form_end(themeRequestForm) }}
+
+        <br>
+        <button id="closeThemeModal">Fermer</button>
+    </div>
+</div>
+
 <script>
+// Modal photo
 const modal = document.getElementById('addMediaModal');
 const btn = document.getElementById('addMediaBtn');
 const close = document.getElementById('closeModal');
 
-btn?.addEventListener('click', () => modal.style.display = 'flex');
+btn?.addEventListener('click', () => {
+    modal.querySelector('form').action = '{{ path("app_upload_photo") }}';
+    modal.style.display = 'flex';
+});
 close?.addEventListener('click', () => modal.style.display = 'none');
 
 // Toggle affichage des infos pour chaque photo
 document.querySelectorAll('.toggle-info').forEach(button => {
     button.addEventListener('click', () => {
         const infoDiv = button.previousElementSibling;
-        infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+        if(infoDiv.style.display === 'none') {
+            infoDiv.style.display = 'block';
+            button.innerText = 'Voir moins';
+        } else {
+            infoDiv.style.display = 'none';
+            button.innerText = 'Voir détails';
+        }
     });
 });
+
+// Préremplir modal pour édition
+document.querySelectorAll('.edit-photo-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const photoDiv = button.closest('.media-item');
+        const photoId = photoDiv.dataset.id;
+
+        const description = photoDiv.querySelector('p').innerText;
+        const isPublic = photoDiv.querySelector('.label-prive').innerText === 'Public';
+
+        const modal = document.getElementById('addMediaModal');
+        modal.querySelector('input[name="description"]').value = description;
+        modal.querySelector('input[name="public"]').checked = isPublic;
+        modal.querySelector('form').action = '/photo/' + photoId + '/edit';
+        modal.style.display = 'flex';
+    });
+});
+
+// Supprimer avec confirmation
+document.querySelectorAll('.delete-photo-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const photoDiv = button.closest('.media-item');
+        const photoId = photoDiv.dataset.id;
+        const confirmed = confirm('Êtes-vous sûr de vouloir supprimer cette photo ?');
+        if(confirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/photo/' + photoId + '/delete';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
+
+// Modal demande de thème
+const themeModal = document.getElementById('themeRequestModal');
+const themeBtn = document.getElementById('requestThemeBtn');
+const closeThemeBtn = document.getElementById('closeThemeModal');
+
+themeBtn?.addEventListener('click', () => themeModal.style.display = 'flex');
+closeThemeBtn?.addEventListener('click', () => themeModal.style.display = 'none');
 </script>
 
 <style>
@@ -147,7 +201,6 @@ nav {
 .flash-success { color: green; }
 .flash-error { color: red; }
 
-/* Label "Privé" */
 .label-prive {
     position: absolute;
     top: 5px;
@@ -159,7 +212,6 @@ nav {
     font-size: 0.8em;
 }
 
-/* MODAL */
 .modal {
     display: none;
     position: fixed;
