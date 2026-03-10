@@ -2,9 +2,8 @@
 
 namespace App\Controller;
 
-use App\Entity\Album;
 use App\Entity\Photos;
-use App\Entity\Videos;
+use App\Entity\Themes;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,28 +16,34 @@ final class ProductController extends AbstractController
     #[Route('/welcome', name: 'app_welcome')]
     public function welcome(EntityManagerInterface $em): Response
     {
-        // Récupérer les albums de l'utilisateur connecté
-        $albums = $em->getRepository(Album::class)->findBy(['user' => $this->getUser()]);
+        $user = $this->getUser();
+
+        // Récupérer toutes les photos privées de l'utilisateur
+        $privatePhotos = $em->getRepository(Photos::class)
+            ->findBy(['userPhoto' => $user, 'public' => false], ['date_added' => 'DESC']);
+
+        // Récupérer tous les thèmes pour le <select> du modal
+        $themes = $em->getRepository(Themes::class)->findAll();
 
         return $this->render('product/index.html.twig', [
-            'albums' => $albums,
+            'photos' => $privatePhotos,
+            'themes' => $themes,
         ]);
     }
 
-    #[Route('/upload', name: 'app_upload', methods: ['POST'])]
+    #[Route('/upload/photo', name: 'app_upload_photo', methods: ['POST'])]
     public function upload(Request $request, EntityManagerInterface $em): Response
     {
-        $type = $request->request->get('type'); // photo ou video
         $description = $request->request->get('description');
-        $isPublic = $request->request->has('public');
-        $file = $request->files->get('file');
+        $isPublic = $request->request->get('public') ? true : false;
+        $file = $request->files->get('photo_file');
 
         if (!$file) {
             $this->addFlash('error', 'Veuillez sélectionner un fichier.');
             return $this->redirectToRoute('app_welcome');
         }
 
-        $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads';
+        $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads/photos';
         $filename = uniqid() . '.' . $file->guessExtension();
 
         try {
@@ -48,39 +53,26 @@ final class ProductController extends AbstractController
             return $this->redirectToRoute('app_welcome');
         }
 
-        // Vérifier si un album "Mes Médias" existe, sinon le créer
-        $albumRepo = $em->getRepository(Album::class);
-        $album = $albumRepo->findOneBy(['user' => $this->getUser(), 'categorie' => 'Mes Médias']);
-        if (!$album) {
-            $album = new Album();
-            $album->setUser($this->getUser());
-            $album->setCategorie('Mes Médias');
-            $em->persist($album);
+        $photo = new Photos();
+        $photo->setPhotoUrl($filename);
+        $photo->setDescription($description);
+        $photo->setPublic($isPublic);
+        $photo->setDateAdded(new \DateTimeImmutable());
+        $photo->setUserPhoto($this->getUser());
+
+        // Ajouter le thème sélectionné
+        $themeId = $request->request->get('theme_id');
+        if ($themeId) {
+            $theme = $em->getRepository(Themes::class)->find($themeId);
+            if ($theme) {
+                $photo->addTheme($theme);
+            }
         }
 
-        if ($type === 'photo') {
-            $photo = new Photos();
-            $photo->setPhotoUrl('/uploads/' . $filename);
-            $photo->setDescription($description);
-            $photo->setPublic($isPublic);
-            $photo->setDateAdded(new \DateTimeImmutable());
-            $album->addPhoto($photo);
-            $em->persist($photo);
-        } else {
-            $video = new Videos();
-            $video->setVideoUrl('/uploads/' . $filename);
-            $video->setDescription($description);
-            $video->setPublic($isPublic);
-            $video->setDateAdded(new \DateTimeImmutable());
-            $album->addVideo($video);
-            $em->persist($video);
-        }
-
-        $em->persist($album);
+        $em->persist($photo);
         $em->flush();
 
-        $this->addFlash('success', ucfirst($type) . ' ajoutée avec succès !');
-
+        $this->addFlash('success', 'Photo ajoutée avec succès !');
         return $this->redirectToRoute('app_welcome');
     }
 }

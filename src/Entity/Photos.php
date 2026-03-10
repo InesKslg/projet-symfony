@@ -6,6 +6,8 @@ use App\Repository\PhotosRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\User;
+
 
 #[ORM\Entity(repositoryClass: PhotosRepository::class)]
 class Photos
@@ -21,8 +23,8 @@ class Photos
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $date_added = null;
+    #[ORM\Column(type:"datetime_immutable", nullable:true)]
+    private ?\DateTimeImmutable $date_prise = null;
 
     #[ORM\Column]
     private ?bool $public = null;
@@ -33,10 +35,25 @@ class Photos
     #[ORM\ManyToMany(targetEntity: Album::class, mappedBy: 'photos')]
     private Collection $albums;
 
-    
+    #[ORM\Column(length: 255)]
+    private ?string $localisation = null;
+
+    /**
+     * @var Collection<int, Themes>
+     */
+    #[ORM\ManyToMany(targetEntity: Themes::class, inversedBy: 'photos')]
+    private Collection $themes;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $date_added = null;
+
+    #[ORM\ManyToOne(inversedBy: 'photos')]
+    private ?User $userPhoto = null;
+
     public function __construct()
     {
         $this->albums = new ArrayCollection();
+        $this->themes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -52,7 +69,6 @@ class Photos
     public function setPhotoUrl(string $photo_url): static
     {
         $this->photo_url = $photo_url;
-
         return $this;
     }
 
@@ -64,7 +80,6 @@ class Photos
     public function setDescription(string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -76,7 +91,6 @@ class Photos
     public function setDateAdded(\DateTimeImmutable $date_added): static
     {
         $this->date_added = $date_added;
-
         return $this;
     }
 
@@ -88,7 +102,28 @@ class Photos
     public function setPublic(bool $public): static
     {
         $this->public = $public;
+        return $this;
+    }
 
+    public function getLocalisation(): ?string
+    {
+        return $this->localisation;
+    }
+
+    public function setLocalisation(string $localisation): static
+    {
+        $this->localisation = $localisation;
+        return $this;
+    }
+
+    public function getDatePrise(): ?\DateTimeImmutable
+    {
+        return $this->date_prise;
+    }
+
+    public function setDatePrise(?\DateTimeImmutable $date_prise): static
+    {
+        $this->date_prise = $date_prise;
         return $this;
     }
 
@@ -106,7 +141,6 @@ class Photos
             $this->albums->add($album);
             $album->addPhoto($this);
         }
-
         return $this;
     }
 
@@ -115,9 +149,40 @@ class Photos
         if ($this->albums->removeElement($album)) {
             $album->removePhoto($this);
         }
-
         return $this;
     }
 
-    
+    /**
+     * @return Collection<int, Themes>
+     */
+    public function getThemes(): Collection
+    {
+        return $this->themes;
+    }
+
+    public function addTheme(Themes $theme): static
+    {
+        if (!$this->themes->contains($theme)) {
+            $this->themes->add($theme);
+        }
+        return $this;
+    }
+
+    public function removeTheme(Themes $theme): static
+    {
+        $this->themes->removeElement($theme);
+        return $this;
+    }
+
+    public function getUserPhoto(): ?User
+    {
+        return $this->userPhoto;
+    }
+
+    public function setUserPhoto(?User $userPhoto): static
+    {
+        $this->userPhoto = $userPhoto;
+
+        return $this;
+    }
 }
