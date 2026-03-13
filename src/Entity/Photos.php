@@ -22,8 +22,7 @@ class Photos
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    // Nullable pour pouvoir stocker une date de prise extraite du EXIF si dispo
-    #[ORM\Column(type:"datetime_immutable", nullable:true)]
+    #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeImmutable $date_prise = null;
 
     #[ORM\Column]
@@ -42,6 +41,7 @@ class Photos
      * @var Collection<int, Themes>
      */
     #[ORM\ManyToMany(targetEntity: Themes::class, inversedBy: 'photos')]
+    #[ORM\JoinTable(name: 'photos_themes')]
     private Collection $themes;
 
     #[ORM\Column]

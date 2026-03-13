@@ -9,13 +9,11 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Entity\ThemeRequest;
 use App\Form\ThemeRequestType;
-use lsolesen\pel\PelDataWindow;
+use App\Entity\Notification;
 use lsolesen\pel\PelJpeg;
 use lsolesen\pel\PelExif;
-
 
 final class ProductController extends AbstractController
 {
@@ -24,39 +22,43 @@ final class ProductController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Récupérer toutes les photos privées de l'utilisateur
+        // 🔔 Récupérer UNE SEULE notification non lue (la plus récente)
+        $notifications = $em->getRepository(Notification::class)->findBy(
+            ['recipient' => $user, 'isRead' => false],
+            ['id' => 'DESC'],
+            1
+        );
+
+        // Photos privées
         $privatePhotos = $em->getRepository(Photos::class)
             ->findBy(['userPhoto' => $user, 'public' => false], ['date_added' => 'DESC']);
 
-        // Récupérer tous les thèmes pour le <select> du modal
+        // Thèmes
         $themes = $em->getRepository(Themes::class)->findAll();
 
-        // -----------------------------
-        // Formulaire de demande de thème
-        // -----------------------------
+        // Formulaire demande de thème
         $themeRequest = new ThemeRequest();
         $themeRequestForm = $this->createForm(ThemeRequestType::class, $themeRequest);
         $themeRequestForm->handleRequest($request);
 
         if ($themeRequestForm->isSubmitted() && $themeRequestForm->isValid()) {
             $themeRequest->setRequestedBy($user);
-            $themeRequest->setStatus('pending'); // status par défaut
+            $themeRequest->setStatus('pending');
 
             $em->persist($themeRequest);
             $em->flush();
 
             $this->addFlash('success', 'Votre demande de thème a été envoyée !');
-
             return $this->redirectToRoute('app_welcome');
         }
 
         return $this->render('product/index.html.twig', [
             'photos' => $privatePhotos,
             'themes' => $themes,
-            'themeRequestForm' => $themeRequestForm->createView(), // <-- essentiel
+            'themeRequestForm' => $themeRequestForm->createView(),
+            'notifications' => $notifications,
         ]);
     }
-
 
     #[Route('/upload/photo', name: 'app_upload_photo', methods: ['POST'])]
     public function upload(Request $request, EntityManagerInterface $em): Response
@@ -87,7 +89,7 @@ final class ProductController extends AbstractController
         $photo->setDateAdded(new \DateTimeImmutable());
         $photo->setUserPhoto($this->getUser());
 
-        // Récupérer EXIF
+        
         try {
             $pel = new PelJpeg($uploadsDir.'/'.$filename);
             $exif = $pel->getExif();
@@ -96,32 +98,22 @@ final class ProductController extends AbstractController
                 $tiff = $exif->getTiff();
                 $subIfd = $tiff->getSubIfd();
 
-            // Date de prise
-            $date = $subIfd->getDateTimeOriginal();
-            if ($date) {
-                $photo->setDatePrise(new \DateTimeImmutable($date->format('Y-m-d H:i:s')));
-            } else {
-                // On met la date actuelle si EXIF absent
-                $photo->setDatePrise(new \DateTimeImmutable());
-            }
+                $date = $subIfd->getDateTimeOriginal();
+                $photo->setDatePrise($date ? new \DateTimeImmutable($date->format('Y-m-d H:i:s')) : new \DateTimeImmutable());
 
-            // GPS
-            $gps = $tiff->getGps();
-            if ($gps) {
-                $lat = $gps->getLatitude();
-                $lon = $gps->getLongitude();
-                $photo->setLocalisation("{$lat}, {$lon}");
+                $gps = $tiff->getGps();
+                if ($gps) {
+                    $lat = $gps->getLatitude();
+                    $lon = $gps->getLongitude();
+                    $photo->setLocalisation("{$lat}, {$lon}");
+                } else {
+                    $photo->setLocalisation('Non renseignée');
+                }
             } else {
-                // Valeur par défaut si GPS absent
-                $photo->setLocalisation('Non renseignée');
-            }
-            } else {
-                // Si pas d'EXIF du tout, on met des valeurs par défaut
                 $photo->setDatePrise(new \DateTimeImmutable());
                 $photo->setLocalisation('Non renseignée');
             }
         } catch (\Exception $e) {
-            // En cas d'erreur de lecture EXIF, on met des valeurs par défaut
             $photo->setDatePrise(new \DateTimeImmutable());
             $photo->setLocalisation('Non renseignée');
         }
@@ -145,11 +137,8 @@ final class ProductController extends AbstractController
     #[Route('/photo/{id}/edit', name: 'app_edit_photo', methods:['POST'])]
     public function edit(Request $request, EntityManagerInterface $em, Photos $photo): Response
     {
-        $description = $request->request->get('description');
-        $photo->setDescription($description);
+        $photo->setDescription($request->request->get('description'));
         $photo->setPublic($request->request->get('public') ? true : false);
-
-        // possibilité d'ajouter modification du thème ici
 
         $em->flush();
         $this->addFlash('success', 'Photo modifiée !');
@@ -164,7 +153,6 @@ final class ProductController extends AbstractController
         }
 
         $em->flush();
-       
         $em->remove($photo);
         $em->flush();
 
@@ -172,4 +160,12 @@ final class ProductController extends AbstractController
         return $this->redirectToRoute('app_welcome');
     }
 
+    #[Route('/notification/read/{id}', name: 'notification_read')]
+    public function readNotification(Notification $notification, EntityManagerInterface $em): Response
+    {
+        $notification->setIsRead(true);
+        $em->flush();
+
+        return $this->redirectToRoute('app_welcome');
+    }
 }

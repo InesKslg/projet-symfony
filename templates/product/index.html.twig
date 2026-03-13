@@ -14,6 +14,19 @@
     {% endif %}
 </nav>
 
+{# 🔔 NOTIFICATION BULLE BLANCHE #}
+{% if notifications|length > 0 %}
+    {% set notif = notifications[0] %}
+    <div class="notif-bubble">
+        <span class="notif-icon">🔔</span>
+        <span class="notif-text">{{ notif.message }}</span>
+
+        {# ❗ FIX : plus de lien, juste un bouton JS #}
+        <span class="notif-close" data-id="{{ notif.id }}">✖</span>
+    </div>
+{% endif %}
+
+{# FLASH MESSAGES #}
 {% for message in app.flashes('success') %}
     <div class="flash-success">{{ message }}</div>
 {% endfor %}
@@ -21,6 +34,7 @@
     <div class="flash-error">{{ message }}</div>
 {% endfor %}
 
+{# GALERIE #}
 {% if photos is empty %}
     <p>Vous n'avez aucune photo privée pour l'instant.</p>
 {% else %}
@@ -31,7 +45,6 @@
                 <p>{{ photo.description }}</p>
                 <span class="label-prive">{{ photo.public ? 'Public' : 'Privé' }}</span>
 
-                <!-- Dépliant infos -->
                 <div class="photo-info" style="display:none; text-align:left; margin-top:5px;">
                     <p><strong>Description :</strong> {{ photo.description }}</p>
                     <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
@@ -39,19 +52,17 @@
                     <p><strong>Thème :</strong> {% if photo.themes|length > 0 %}{{ photo.themes|first.nom }}{% else %}Aucun{% endif %}</p>
                     <p><strong>Statut :</strong> {{ photo.public ? 'Public' : 'Privé' }}</p>
 
-                    <!-- Boutons actions -->
                     <button class="edit-photo-btn">Modifier</button>
                     <button class="delete-photo-btn">Supprimer</button>
                 </div>
 
-                <!-- Bouton pour déplier -->
                 <button class="toggle-info">Voir détails</button>
             </div>
         {% endfor %}
     </div>
 {% endif %}
 
-<!-- MODAL AJOUT / ÉDITION PHOTO -->
+{# ---------------- MODAL AJOUT / ÉDITION PHOTO ---------------- #}
 <div id="addMediaModal" class="modal">
     <div class="modal-content">
         <h2>Ajouter / Modifier une photo</h2>
@@ -84,7 +95,7 @@
     </div>
 </div>
 
-<!-- MODAL DEMANDE DE THEME -->
+{# ---------------- MODAL DEMANDE DE THEME ---------------- #}
 <div id="themeRequestModal" class="modal">
     <div class="modal-content">
         <h2>Demander un nouveau thème</h2>
@@ -100,6 +111,7 @@
     </div>
 </div>
 
+{# ---------------- JS ---------------- #}
 <script>
 // Modal photo
 const modal = document.getElementById('addMediaModal');
@@ -112,17 +124,12 @@ btn?.addEventListener('click', () => {
 });
 close?.addEventListener('click', () => modal.style.display = 'none');
 
-// Toggle affichage des infos pour chaque photo
+// Toggle affichage des infos
 document.querySelectorAll('.toggle-info').forEach(button => {
     button.addEventListener('click', () => {
         const infoDiv = button.previousElementSibling;
-        if(infoDiv.style.display === 'none') {
-            infoDiv.style.display = 'block';
-            button.innerText = 'Voir moins';
-        } else {
-            infoDiv.style.display = 'none';
-            button.innerText = 'Voir détails';
-        }
+        infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+        button.innerText = infoDiv.style.display === 'none' ? 'Voir détails' : 'Voir moins';
     });
 });
 
@@ -135,7 +142,6 @@ document.querySelectorAll('.edit-photo-btn').forEach(button => {
         const description = photoDiv.querySelector('p').innerText;
         const isPublic = photoDiv.querySelector('.label-prive').innerText === 'Public';
 
-        const modal = document.getElementById('addMediaModal');
         modal.querySelector('input[name="description"]').value = description;
         modal.querySelector('input[name="public"]').checked = isPublic;
         modal.querySelector('form').action = '/photo/' + photoId + '/edit';
@@ -143,13 +149,12 @@ document.querySelectorAll('.edit-photo-btn').forEach(button => {
     });
 });
 
-// Supprimer avec confirmation
+// Supprimer
 document.querySelectorAll('.delete-photo-btn').forEach(button => {
     button.addEventListener('click', () => {
         const photoDiv = button.closest('.media-item');
         const photoId = photoDiv.dataset.id;
-        const confirmed = confirm('Êtes-vous sûr de vouloir supprimer cette photo ?');
-        if(confirmed) {
+        if(confirm('Êtes-vous sûr ?')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/photo/' + photoId + '/delete';
@@ -166,9 +171,58 @@ const closeThemeBtn = document.getElementById('closeThemeModal');
 
 themeBtn?.addEventListener('click', () => themeModal.style.display = 'flex');
 closeThemeBtn?.addEventListener('click', () => themeModal.style.display = 'none');
+
+
+document.querySelector('.notif-close')?.addEventListener('click', async (e) => {
+    const id = e.target.dataset.id;
+
+    // Marquer comme lue en AJAX
+    await fetch('/notification/read/' + id);
+
+    // Enlever la bulle sans reload
+    document.querySelector('.notif-bubble').remove();
+});
 </script>
 
 <style>
+
+/* 🔔 BULLE DE NOTIFICATION — NE BLOQUE PLUS RIEN */
+.notif-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    color: #333;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    animation: fadeIn 0.3s ease-out;
+    max-width: 300px;
+
+    pointer-events: auto;
+}
+
+.notif-close {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.notif-close:hover {
+    color: #000;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- TON CSS EXISTANT --- */
 nav {
     background: #f5f5f5;
     padding: 1em;
@@ -220,7 +274,7 @@ nav {
     background: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999;
 }
 
 .modal-content {
@@ -236,6 +290,7 @@ nav {
     margin-bottom: 10px;
     padding: 6px;
 }
+
 </style>
 
 {% endblock %}

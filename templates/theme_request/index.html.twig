@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Demande de thème{% endblock %}
+
+{% block body %}
+<h1>Demande de création de thème</h1>
+
+{{ form_start(form) }}
+    {{ form_row(form.title) }}
+    {{ form_row(form.description) }}
+    <button type="submit">Envoyer la demande</button>
+{{ form_end(form) }}
+{% endblock %}

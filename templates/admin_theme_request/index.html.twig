@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Demandes de thèmes{% endblock %}
+
+{% block body %}
+<h1>Demandes de thèmes</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Description</th>
+            <th>Utilisateur</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in requests %}
+            <tr>
+                <td>{{ request.id }}</td>
+                <td>{{ request.title }}</td>
+                <td>{{ request.description }}</td>
+                <td>{{ request.requestedBy.email }}</td>
+                <td>{{ request.status }}</td>
+                <td>
+                    {% if request.status == 'pending' %}
+                        <a href="{{ path('admin_theme_request_approve', {'id': request.id}) }}">Approuver</a>
+                        <a href="{{ path('admin_theme_request_reject', {'id': request.id}) }}">Rejeter</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

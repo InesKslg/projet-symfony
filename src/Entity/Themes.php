@@ -21,11 +21,7 @@ class Themes
     /**
      * @var Collection<int, Photos>
      */
-    #[ORM\ManyToMany(targetEntity: Photos::class)]
-    #[ORM\JoinTable(name: 'photos_themes',
-        joinColumns: [new ORM\JoinColumn(name: 'themes_id', referencedColumnName: 'id')],
-        inverseJoinColumns: [new ORM\JoinColumn(name: 'photos_id', referencedColumnName: 'id')]
-    )]
+    #[ORM\ManyToMany(targetEntity: Photos::class, mappedBy: 'themes')]
     private Collection $photos;
 
     public function __construct()
@@ -49,9 +45,6 @@ class Themes
         return $this;
     }
 
-    /**
-     * @return Collection<int, Photos>
-     */
     public function getPhotos(): Collection
     {
         return $this->photos;
@@ -62,6 +55,7 @@ class Themes
         if (!$this->photos->contains($photo)) {
             $this->photos->add($photo);
         }
+
         return $this;
     }
 
