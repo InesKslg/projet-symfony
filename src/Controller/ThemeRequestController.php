@@ -23,7 +23,7 @@ class ThemeRequestController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $themeRequest->setRequestedBy($this->getUser());
-            $themeRequest->setStatus('pending'); // 'pending' = en attente
+            $themeRequest->setStatus('pending'); // =en attente
 
             $em->persist($themeRequest);
             $em->flush();
