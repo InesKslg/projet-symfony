@@ -36,7 +36,7 @@
 <!-- Galerie -->
 <div id="photo-grid" class="photo-grid">
     {% for item in defaultPhotos %}
-        <div class="photo-card" data-theme="{{ item.themeId }}">
+        <div class="photo-card" data-theme="{{ item.themeId ?: 'none' }}">
             <div class="photo-wrapper">
                 <img src="{{ asset('uploads/photos/' ~ item.photo.photoUrl) }}" alt="{{ item.photo.description }}">
                 <div class="overlay">
@@ -48,7 +48,7 @@
             <div class="photo-info">
                 <p><strong>Description :</strong> {{ item.photo.description }}</p>
                 <p><strong>Posté par :</strong> {{ item.photo.userPhoto ? item.photo.userPhoto.userIdentifier : 'Inconnu' }}</p>
-                <p><strong>Localisation :</strong> {{ item.photo.localisation }}</p>
+                <p><strong>Localisation :</strong> {{ item.photo.localisation ?: 'Non renseignée' }}</p>
                 <p><strong>Date de prise :</strong> 
                     {% if item.photo.datePrise %}
                         {{ item.photo.datePrise|date('d/m/Y') }}
@@ -75,13 +75,10 @@
 <div id="pagination" class="pagination"></div>
 
 <style>
-
-/* HEADER */
+/* ======= CSS ======= */
 .home-header{
     position: fixed;
-    top:0;
-    left:0;
-    right:0;
+    top:0; left:0; right:0;
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -91,322 +88,128 @@
     z-index:1000;
 }
 
-.logo{
-    font-size:1.5rem;
-    font-weight:bold;
-    color:#333;
-}
+.logo{ font-size:1.5rem; font-weight:bold; color:#333; }
+.header-nav a{ text-decoration:none; padding:8px 15px; margin-left:10px; border-radius:50px; font-weight:500; }
+.btn-primary{ background:#ff6b6b; color:white; }
+.btn-secondary{ border:1px solid #ff6b6b; color:#ff6b6b; }
 
-.header-nav a{
-    text-decoration:none;
-    padding:8px 15px;
-    margin-left:10px;
-    border-radius:50px;
-    font-weight:500;
-}
+.theme-search{ margin-top:90px; text-align:center; }
+.theme-search input{ padding:8px 15px; width:250px; border-radius:50px; border:1px solid #ccc; }
+.theme-search button{ padding:8px 15px; margin-left:8px; border-radius:50px; border:none; background:#ff6b6b; color:white; cursor:pointer; }
+.theme-search button:hover{ background:#ff4757; }
 
-.btn-primary{
-    background:#ff6b6b;
-    color:white;
-}
+.themes{ display:flex; justify-content:center; gap:12px; margin:20px; flex-wrap:wrap; }
+.theme-bubble{ padding:8px 18px; border-radius:50px; border:1px solid #ccc; background:#f8f8f8; cursor:pointer; }
+.theme-bubble.active, .theme-bubble:hover{ background:#ff6b6b; color:white; }
 
-.btn-secondary{
-    border:1px solid #ff6b6b;
-    color:#ff6b6b;
-}
+.photo-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; padding:0 50px 50px; }
+.photo-card{ overflow:hidden; border-radius:10px; }
+.photo-wrapper{ position:relative; }
+.photo-card img{ width:100%; transition:0.4s; }
+.photo-card:hover img{ transform:scale(1.1); }
+.overlay{ position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.5); color:white; padding:10px; opacity:0; }
+.photo-card:hover .overlay{ opacity:1; }
 
-/* SEARCH */
+.photo-info{ display:none; background:#f4f4f4; padding:10px; margin-top:8px; border-radius:8px; font-size:0.9rem; }
+.toggle-info{ margin-top:5px; padding:6px 12px; border:none; border-radius:5px; background:#ff6b6b; color:white; cursor:pointer; }
+.toggle-info:hover{ background:#ff4757; }
 
-.theme-search{
-    margin-top:90px;
-    text-align:center;
-}
+.pagination{ text-align:center; margin:30px; }
+.pagination button{ padding:6px 12px; margin:4px; border:1px solid #ff6b6b; background:white; color:#ff6b6b; border-radius:5px; }
+.pagination button.active{ background:#ff6b6b; color:white; }
 
-.theme-search input{
-    padding:8px 15px;
-    width:250px;
-    border-radius:50px;
-    border:1px solid #ccc;
-}
-
-.theme-search button{
-    padding:8px 15px;
-    margin-left:8px;
-    border-radius:50px;
-    border:none;
-    background:#ff6b6b;
-    color:white;
-    cursor:pointer;
-}
-
-.theme-search button:hover{
-    background:#ff4757;
-}
-
-/* THEMES */
-
-.themes{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    margin:20px;
-    flex-wrap:wrap;
-}
-
-.theme-bubble{
-    padding:8px 18px;
-    border-radius:50px;
-    border:1px solid #ccc;
-    background:#f8f8f8;
-    cursor:pointer;
-}
-
-.theme-bubble.active,
-.theme-bubble:hover{
-    background:#ff6b6b;
-    color:white;
-}
-
-/* GALLERY */
-
-.photo-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:20px;
-    padding:0 50px 50px;
-}
-
-.photo-card{
-    overflow:hidden;
-    border-radius:10px;
-}
-
-.photo-wrapper{
-    position:relative;
-}
-
-.photo-card img{
-    width:100%;
-    transition:0.4s;
-}
-
-.photo-card:hover img{
-    transform:scale(1.1);
-}
-
-.overlay{
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    background:rgba(0,0,0,0.5);
-    color:white;
-    padding:10px;
-    opacity:0;
-}
-
-.photo-card:hover .overlay{
-    opacity:1;
-}
-
-/* Dépliant infos */
-.photo-info{
-    display:none;
-    background:#f4f4f4;
-    padding:10px;
-    margin-top:8px;
-    border-radius:8px;
-    font-size:0.9rem;
-}
-
-.toggle-info{
-    margin-top:5px;
-    padding:6px 12px;
-    border:none;
-    border-radius:5px;
-    background:#ff6b6b;
-    color:white;
-    cursor:pointer;
-}
-
-.toggle-info:hover{
-    background:#ff4757;
-}
-
-/* PAGINATION */
-
-.pagination{
-    text-align:center;
-    margin:30px;
-}
-
-.pagination button{
-    padding:6px 12px;
-    margin:4px;
-    border:1px solid #ff6b6b;
-    background:white;
-    color:#ff6b6b;
-    border-radius:5px;
-}
-
-.pagination button.active{
-    background:#ff6b6b;
-    color:white;
-}
-
-/* RESPONSIVE */
-
-@media(max-width:1200px){
-.photo-grid{grid-template-columns:repeat(3,1fr);}
-}
-
-@media(max-width:768px){
-.photo-grid{grid-template-columns:repeat(2,1fr);}
-}
-
-@media(max-width:480px){
-.photo-grid{grid-template-columns:1fr;}
-}
-
+@media(max-width:1200px){ .photo-grid{grid-template-columns:repeat(3,1fr);} }
+@media(max-width:768px){ .photo-grid{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:480px){ .photo-grid{grid-template-columns:1fr;} }
 </style>
 
 <script>
+const photosPerPage = 12;
+let currentPage = 1;
+let currentTheme = "all";
 
-const photosPerPage = 12
-let currentPage = 1
-let currentTheme = "all"
+const allPhotos = Array.from(document.querySelectorAll(".photo-card"));
+const paginationDiv = document.getElementById("pagination");
+const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"));
 
-const allPhotos = Array.from(document.querySelectorAll(".photo-card"))
-const paginationDiv = document.getElementById("pagination")
-const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"))
-
-const searchInput = document.getElementById("searchTheme")
-const searchMessage = document.getElementById("searchMessage")
-const searchBtn = document.getElementById("searchBtn")
+const searchInput = document.getElementById("searchTheme");
+const searchMessage = document.getElementById("searchMessage");
+const searchBtn = document.getElementById("searchBtn");
 
 function showPhotos(){
-
     const filteredPhotos = allPhotos.filter(p =>
         currentTheme === "all" || p.dataset.theme === currentTheme
-    )
+    );
 
-    const totalPages = Math.ceil(filteredPhotos.length / photosPerPage)
+    const totalPages = Math.ceil(filteredPhotos.length / photosPerPage);
+    const start = (currentPage-1) * photosPerPage;
+    const end = start + photosPerPage;
 
-    const start = (currentPage-1) * photosPerPage
-    const end = start + photosPerPage
+    allPhotos.forEach(p => p.style.display="none");
+    filteredPhotos.slice(start,end).forEach(p => p.style.display="block");
 
-    allPhotos.forEach(p => p.style.display="none")
-
-    filteredPhotos.slice(start,end).forEach(p =>
-        p.style.display="block"
-    )
-
-    paginationDiv.innerHTML=""
-
+    paginationDiv.innerHTML="";
     for(let i=1;i<=totalPages;i++){
-
-        const btn=document.createElement("button")
-        btn.textContent=i
-
-        if(i===currentPage) btn.classList.add("active")
-
-        btn.onclick=()=>{
-            currentPage=i
-            showPhotos()
-            addToggleInfo()
-        }
-
-        paginationDiv.appendChild(btn)
+        const btn=document.createElement("button");
+        btn.textContent=i;
+        if(i===currentPage) btn.classList.add("active");
+        btn.onclick=()=>{ currentPage=i; showPhotos(); addToggleInfo(); }
+        paginationDiv.appendChild(btn);
     }
 
-    addToggleInfo()
+    addToggleInfo();
 }
 
-/* BOUTONS THEMES */
-
-themeButtons.forEach(btn => {
-
+themeButtons.forEach(btn=>{
     btn.addEventListener("click",()=>{
-
-        themeButtons.forEach(b=>b.classList.remove("active"))
-
-        btn.classList.add("active")
-
-        currentTheme = btn.dataset.theme
-        currentPage = 1
-
-        searchInput.value=""
-        searchMessage.style.display="none"
-
-        showPhotos()
-    })
-
-})
-
-/* FONCTION RECHERCHE */
+        themeButtons.forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        currentTheme = btn.dataset.theme;
+        currentPage = 1;
+        searchInput.value="";
+        searchMessage.style.display="none";
+        showPhotos();
+    });
+});
 
 function searchTheme(){
-
-    const query = searchInput.value.trim().toLowerCase()
-
-    const matchedButton = themeButtons.find(btn =>
-        btn.textContent.toLowerCase().includes(query)
-    )
-
+    const query = searchInput.value.trim().toLowerCase();
+    const matchedButton = themeButtons.find(btn => btn.textContent.toLowerCase().includes(query));
     if(matchedButton){
-
-        themeButtons.forEach(b=>b.classList.remove("active"))
-
-        matchedButton.classList.add("active")
-
-        currentTheme = matchedButton.dataset.theme
-        currentPage = 1
-
-        searchMessage.style.display="none"
-
-        showPhotos()
-
-    }else{
-
-        searchMessage.style.display="block"
+        themeButtons.forEach(b=>b.classList.remove("active"));
+        matchedButton.classList.add("active");
+        currentTheme = matchedButton.dataset.theme;
+        currentPage = 1;
+        searchMessage.style.display="none";
+        showPhotos();
+    } else {
+        searchMessage.style.display="block";
     }
-
 }
 
-/* ENTER CLAVIER */
+searchInput.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ searchTheme(); }
+});
 
-searchInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){
-        searchTheme()
-    }
-})
-
-/* BOUTON RECHERCHE */
-
-searchBtn.addEventListener("click",()=>{
-    searchTheme()
-})
-
-/* FONCTION POUR AFFICHER/REDUIRE LE DEPLIANT */
+searchBtn.addEventListener("click", ()=>{ searchTheme(); });
 
 function addToggleInfo(){
-    const toggleButtons = document.querySelectorAll(".toggle-info")
+    const toggleButtons = document.querySelectorAll(".toggle-info");
     toggleButtons.forEach(btn=>{
         btn.onclick = ()=>{
-            const info = btn.previousElementSibling
+            const info = btn.previousElementSibling;
             if(info.style.display === "block"){
-                info.style.display = "none"
-                btn.textContent = "Voir détails"
+                info.style.display = "none";
+                btn.textContent = "Voir détails";
             }else{
-                info.style.display = "block"
-                btn.textContent = "Réduire"
+                info.style.display = "block";
+                btn.textContent = "Réduire";
             }
         }
-    })
+    });
 }
 
-showPhotos()
-
+showPhotos();
 </script>
 
 {% endblock %}
