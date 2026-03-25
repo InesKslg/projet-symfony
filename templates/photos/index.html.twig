@@ -1,20 +1,95 @@
-{% extends 'base.html.twig' %}
+<div id="photosTab" class="tab-content" style="display:block;">
+    {% set allPhotos = photos %} {# Toutes les photos de l’utilisateur, publiques + privées #}
 
-{% block title %}Hello PhotosController!{% endblock %}
+    {% if allPhotos is empty %}
+        <p>Vous n'avez aucune photo pour l'instant.</p>
+    {% else %}
 
-{% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+        {# --- Bulles thèmes pour toutes les photos --- #}
+        <div id="themesContainerPhotos">
+            {% include 'themes/index.html.twig' with {'themes': themes} %}
+        </div>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+        {# --- Photos Publiques Tab --- #}
+<div id="publicPhotosTab" class="tab-content" style="display:none;">
+    {# On filtre correctement les photos publiques #}
+    {% set publicPhotos = photos|filter(p => p.public|bool) %}
+    
+    {% if publicPhotos is empty %}
+        <p>Vous n'avez aucune photo publique pour l'instant.</p>
+    {% else %}
+        {# Bulles thèmes pour photos publiques #}
+        <div id="themesContainerPublic">
+            {% include 'themes/index.html.twig' with {'themes': themes} %}
+        </div>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>/app/src/Controller/PhotosController.php</code></li>
-        <li>Your template at <code>/app/templates/photos/index.html.twig</code></li>
-    </ul>
+        <div class="gallery">
+            {% for photo in publicPhotos %}
+                <div class="media-item" 
+                     data-id="{{ photo.id }}" 
+                     data-theme="{{ photo.themes|first ? photo.themes|first.id : '' }}">
+                    
+                    <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
+                    <p class="photo-desc">{{ photo.description }}</p>
+                    <span class="label-prive">Public</span>
+
+                    <div class="photo-info" style="display:none; text-align:left; margin-top:5px;">
+                        <p><strong>Description :</strong> {{ photo.description }}</p>
+                        <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
+                        <p><strong>Date de prise :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
+                        <p><strong>Thème :</strong> {% if photo.themes|length > 0 %}{{ photo.themes|first.nom }}{% else %}Aucun{% endif %}</p>
+                        <p><strong>Statut :</strong> Public</p>
+
+                        {# Formulaire Modifier photo #}
+                        <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
+                            <input type="text" name="description" value="{{ photo.description }}" required>
+                            <label><input type="checkbox" name="public" checked> Photo publique</label>
+                        </form>
+
+                        {# Formulaire Supprimer photo #}
+                        <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
+                            <button type="submit">Supprimer</button>
+                        </form>
+                    </div>
+
+                    <button class="toggle-info">Voir détails</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
-{% endblock %}
+
+        <div class="gallery">
+            {% for photo in allPhotos %}
+                <div class="media-item" 
+                    data-id="{{ photo.id }}" 
+                    data-theme="{{ photo.themes|first ? photo.themes|first.id : '' }}">
+                    <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
+                    <p class="photo-desc">{{ photo.description }}</p>
+                    <span class="label-prive">{{ photo.public ? 'Public' : 'Privé' }}</span>
+
+                    <div class="photo-info" style="display:none; text-align:left; margin-top:5px;">
+                        <p><strong>Description :</strong> {{ photo.description }}</p>
+                        <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
+                        <p><strong>Date de prise :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
+                        <p><strong>Thème :</strong> {% if photo.themes|length > 0 %}{{ photo.themes|first.nom }}{% else %}Aucun{% endif %}</p>
+                        <p><strong>Statut :</strong> {{ photo.public ? 'Public' : 'Privé' }}</p>
+
+                        {# Formulaire Modifier photo #}
+                        <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
+                            <input type="text" name="description" value="{{ photo.description }}" required>
+                            <label><input type="checkbox" name="public" {{ photo.public ? 'checked' : '' }}> Photo publique</label>
+                        </form>
+
+                        {# Formulaire Supprimer photo #}
+                        <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
+                            <button type="submit">Supprimer</button>
+                        </form>
+                    </div>
+
+                    <button class="toggle-info">Voir détails</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

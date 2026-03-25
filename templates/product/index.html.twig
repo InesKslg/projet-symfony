@@ -33,7 +33,6 @@
     </div>
 </template>
 
-{# Flash messages #}
 {% for message in app.flashes('success') %}
     <div class="flash-success">{{ message }}</div>
 {% endfor %}
@@ -43,53 +42,47 @@
 
 {# --- Onglets Photos / Albums --- #}
 <div class="tabs">
-    <button class="tab-btn active" data-tab="photosTab">Photos</button>
+    <button class="tab-btn active" data-tab="photosTab">Photos privées</button>
     <button class="tab-btn" data-tab="albumsTab">Albums</button>
+    <button class="tab-btn" data-tab="publicPhotosTab">Photos publiques</button>
 </div>
 
-{# --- Photos Tab --- #}
-{# Bulles des thèmes pour filtrer les photos #}
-<div class="themes">
-    <button class="theme-bubble active" data-theme="all">Tous</button>
-    {% for theme in themes %}
-        <button class="theme-bubble" data-theme="{{ theme.id }}">
-            {{ theme.nom }}
-        </button>
-    {% endfor %}
-</div>
+{# --- Photos privées --- #}
 <div id="photosTab" class="tab-content" style="display:block;">
-    {% if photos is empty %}
+    {% set privatePhotos = photos|filter(p => p.public != 1) %}
+    {% if privatePhotos is empty %}
         <p>Vous n'avez aucune photo privée pour l'instant.</p>
     {% else %}
+        <div id="themesContainer">
+            {% include 'themes/index.html.twig' with {'themes': themes} %}
+        </div>
         <div class="gallery">
-            {% for photo in photos %}
-                <div class="media-item" 
-                    data-id="{{ photo.id }}" 
-                    data-theme="{{ photo.themes|first ? photo.themes|first.id : '' }}">   
+            {% for photo in privatePhotos %}
+                <div class="media-item" data-id="{{ photo.id }}" data-theme="{{ photo.themes|first ? photo.themes|first.id : '' }}">
                     <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
                     <p class="photo-desc">{{ photo.description }}</p>
-                    <span class="label-prive">{{ photo.public ? 'Public' : 'Privé' }}</span>
+                    <span class="label-prive">Privé</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
 
-                    <div class="photo-info" style="display:none; text-align:left; margin-top:5px;">
-                        <p><strong>Description :</strong> {{ photo.description }}</p>
-                        <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
-                        <p><strong>Date de prise :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
-                        <p><strong>Thème :</strong> {% if photo.themes|length > 0 %}{{ photo.themes|first.nom }}{% else %}Aucun{% endif %}</p>
-                        <p><strong>Statut :</strong> {{ photo.public ? 'Public' : 'Privé' }}</p>
-
-                        {# Formulaire Modifier photo #}
-                        <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
-                            <input type="text" name="description" value="{{ photo.description }}" required>
-                            <label><input type="checkbox" name="public" {{ photo.public ? 'checked' : '' }}> Photo publique</label>
-                        </form>
-
-                        {# Formulaire Supprimer photo #}
-                        <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
-                            <button type="submit">Supprimer</button>
-                        </form>
-                    </div>
-
-                    <button class="toggle-info">Voir détails</button>
+{# --- Photos publiques --- #}
+<div id="publicPhotosTab" class="tab-content" style="display:none;">
+    {% set publicPhotos = photos|filter(p => p.public == 1) %}
+    {% if publicPhotos is empty %}
+        <p>Vous n'avez aucune photo publique pour l'instant.</p>
+    {% else %}
+        <div id="themesContainerPublic">
+            {% include 'themes/index.html.twig' with {'themes': themes} %}
+        </div>
+        <div class="gallery">
+            {% for photo in publicPhotos %}
+                <div class="media-item" data-id="{{ photo.id }}" data-theme="{{ photo.themes|first ? photo.themes|first.id : '' }}">
+                    <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
+                    <p class="photo-desc">{{ photo.description }}</p>
+                    <span class="label-prive">Public</span>
                 </div>
             {% endfor %}
         </div>
@@ -106,7 +99,7 @@
                 <div class="media-item" data-id="{{ album.id }}">
                     <p><strong>{{ album.categorie }}</strong></p>
                     <span class="label-prive">{{ album.status ? 'Public' : 'Privé' }}</span>
-                    
+
                     <div class="album-info" style="display:none; text-align:left; margin-top:5px;">
                         <p><strong>Statut :</strong> {{ album.status ? 'Public' : 'Privé' }}</p>
                         
@@ -114,26 +107,25 @@
                             <button type="submit">Supprimer</button>
                         </form>
 
-                    <form action="{{ path('app_add_photo_to_album', {'id': album.id}) }}" method="POST">
-                        <p>Sélectionnez les photos privées à ajouter :</p>
-                        <div class="checkbox-list" style="max-height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
-                            {% for photo in photos %}
-                                {% if not photo.public and photo.id not in album.photos|map(p => p.id) %}
-                                    <div>
-                                        <label>
-                                            <input type="checkbox" name="photo_ids[]" value="{{ photo.id }}">
-                                            {{ photo.description }}
-                                        </label>
-                                    </div>
+                        <form action="{{ path('app_add_photo_to_album', {'id': album.id}) }}" method="POST">
+                            <p>Sélectionnez les photos privées à ajouter :</p>
+                            <div class="checkbox-list" style="max-height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
+                                {% for photo in photos %}
+                                    {% if not photo.public and photo.id not in album.photos|map(p => p.id) %}
+                                        <div>
+                                            <label>
+                                                <input type="checkbox" name="photo_ids[]" value="{{ photo.id }}">
+                                                {{ photo.description }}
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if photos|filter(p => not p.public and p.id not in album.photos|map(p => p.id))|length == 0 %}
+                                    <p>Toutes vos photos privées sont déjà dans cet album.</p>
                                 {% endif %}
-                            {% endfor %}
-                            {% if photos|filter(p => not p.public and p.id not in album.photos|map(p => p.id))|length == 0 %}
-                                <p>Toutes vos photos privées sont déjà dans cet album.</p>
-                            {% endif %}
-                        </div>
-                        <button type="submit" style="margin-top:10px;">Ajouter à l’album</button>
-                    </form>
-
+                            </div>
+                            <button type="submit" style="margin-top:10px;">Ajouter à l’album</button>
+                        </form>
                     </div>
 
                     <button class="toggle-album-info">Voir détails</button>
@@ -149,6 +141,7 @@
     <h2 id="modalAlbumTitle"></h2>
     <div id="albumPhotosContainer" class="gallery-grid"></div>
 </div>
+
 {# --- Modals --- #}
 <div id="addMediaModal" class="modal">
     <div class="modal-content">
@@ -220,12 +213,12 @@
         <button id="closeEditPhotoModal">Fermer</button>
     </div>
 </div>
+
 {% endblock %}
 
 {% block javascripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
     // ----------------------
     // Onglets Photos / Albums
     // ----------------------
@@ -237,8 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(btn.dataset.tab).style.display = 'block';
         });
     });
-
-    
 
     // ----------------------
     // Notifications
@@ -278,33 +269,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle infos photo / album
     // ----------------------
     document.addEventListener('click', e => {
-        // Toggle photo info
         if(e.target.classList.contains('toggle-info')){
             const info = e.target.previousElementSibling;
             info.style.display = info.style.display === 'none' ? 'block' : 'none';
             e.target.innerText = info.style.display === 'none' ? 'Voir détails' : 'Voir moins';
         }
-
-        // Toggle album info
         if(e.target.classList.contains('toggle-album-info')){
             const info = e.target.previousElementSibling;
             info.style.display = info.style.display === 'none' ? 'block' : 'none';
             e.target.innerText = info.style.display === 'none' ? 'Voir détails' : 'Voir moins';
         }
-
-        // Voir photos d'un album (AJAX simplifié)
         if(e.target.classList.contains('view-album-photos-btn')){
             (async () => {
                 const albumId = e.target.dataset.albumId;
                 const res = await fetch(`/album/${albumId}/json`);
                 const data = await res.json();
-
                 const container = document.getElementById('albumPhotosContainer');
                 const modalTitle = document.getElementById('modalAlbumTitle');
-
                 container.innerHTML = '';
                 modalTitle.textContent = `Photos de l’album ${data.albumName}`;
-
                 if(data.photos.length === 0){
                     container.innerHTML = '<p>Aucune photo dans cet album.</p>';
                 } else {
@@ -322,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         container.appendChild(div);
                     });
                 }
-
                 albumWrapper.style.display = 'block';
                 albumWrapper.scrollIntoView({ behavior: 'smooth' });
             })();
@@ -330,35 +312,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ----------------------
-    // Thèmes - filtrage photos
+    // Thèmes - filtrage photos (privées + publiques)
     // ----------------------
+    const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"));
+    const privatePhotos = Array.from(document.querySelectorAll("#photosTab .gallery .media-item"));
+    const publicPhotos = Array.from(document.querySelectorAll("#publicPhotosTab .gallery .media-item"));
+    const allPhotos = privatePhotos.concat(publicPhotos);
 
-        const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"));
-        const photos = Array.from(document.querySelectorAll("#photosTab .gallery .media-item")); 
+    themeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            themeButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const selectedTheme = btn.dataset.theme;
 
-        themeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // toggle active
-                themeButtons.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-
-                const selectedTheme = btn.dataset.theme;
-
-                // filtrage
-                photos.forEach(photo => {
-                    // chaque photo a data-theme="id" ou "" si aucun
-                    photo.style.display = (selectedTheme === "all" || photo.dataset.theme === selectedTheme) ? "block" : "none";
-                });
+            allPhotos.forEach(photo => {
+                photo.style.display = (selectedTheme === "all" || photo.dataset.theme === selectedTheme) ? "block" : "none";
             });
         });
-
+    });
 });
 </script>
 {% endblock %}
 
 {% block stylesheets %}
 <style>
-/* ... ton CSS existant ... */
+/* --- CSS --- */
 
 /* Nouvelle grille album photos */
 .gallery-grid {
@@ -366,10 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
 }
-.gallery-grid .media-item {
-    width: 100%;
-}
-
+.gallery-grid .media-item { width:100%; }
 
 /* Tabs */
 .tabs{display:flex;gap:10px;margin-top:1em;}
