@@ -4,7 +4,6 @@
 
 {% block body %}
 
-<!-- HEADER FIXE -->
 <header class="home-header">
     <div class="logo">PIXARA</div>
     <nav class="header-nav">
@@ -13,30 +12,23 @@
     </nav>
 </header>
 
-<!-- BARRE DE RECHERCHE -->
 <div class="theme-search">
     <input type="text" id="searchTheme" placeholder="Rechercher un thème...">
     <button id="searchBtn">Entrer</button>
-
-    <p id="searchMessage" style="display:none; color:red; margin-top:5px;">
-        Élément introuvable
-    </p>
+    <p id="searchMessage">Élément introuvable</p>
 </div>
 
-<!-- Bulles des thèmes -->
 <div class="themes">
     {% for theme in recentThemes %}
-        <button class="theme-bubble {% if theme == firstTheme %}active{% endif %}" 
-                data-theme="{{ theme.id }}">
+        <button class="theme-bubble {% if theme == firstTheme %}active{% endif %}" data-theme="{{ theme.id }}">
             {{ theme.nom }}
         </button>
     {% endfor %}
 </div>
 
-<!-- Galerie -->
 <div id="photo-grid" class="photo-grid">
     {% for item in defaultPhotos %}
-        <div class="photo-card" data-theme="{{ item.themeId ?: 'none' }}">
+        <div class="photo-card" data-theme="{{ item.themeId }}">
             <div class="photo-wrapper">
                 <img src="{{ asset('uploads/photos/' ~ item.photo.photoUrl) }}" alt="{{ item.photo.description }}">
                 <div class="overlay">
@@ -44,172 +36,335 @@
                 </div>
             </div>
 
-            <!-- Dépliant infos -->
             <div class="photo-info">
                 <p><strong>Description :</strong> {{ item.photo.description }}</p>
                 <p><strong>Posté par :</strong> {{ item.photo.userPhoto ? item.photo.userPhoto.userIdentifier : 'Inconnu' }}</p>
-                <p><strong>Localisation :</strong> {{ item.photo.localisation ?: 'Non renseignée' }}</p>
-                <p><strong>Date de prise :</strong> 
+                <p><strong>Localisation :</strong> {{ item.photo.localisation }}</p>
+                <p><strong>Date :</strong> 
                     {% if item.photo.datePrise %}
                         {{ item.photo.datePrise|date('d/m/Y') }}
                     {% else %}
                         Non renseignée
                     {% endif %}
                 </p>
-                <p><strong>Thème :</strong> 
-                    {% if item.photo.themes|length > 0 %}
-                        {{ item.photo.themes|first.nom }}
-                    {% else %}
-                        Aucun
-                    {% endif %}
-                </p>
             </div>
 
-            <!-- Bouton pour déplier -->
             <button class="toggle-info">Voir détails</button>
         </div>
     {% endfor %}
 </div>
 
-<!-- PAGINATION -->
 <div id="pagination" class="pagination"></div>
 
 <style>
-/* ======= CSS ======= */
-.home-header{
-    position: fixed;
-    top:0; left:0; right:0;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:15px 50px;
-    background:#fff;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-    z-index:1000;
+body {
+    background:#f5f6fa;
+    font-family:'Inter',sans-serif;
+    margin:0;
+    padding:0;
+    color:#2c3e50;
 }
 
-.logo{ font-size:1.5rem; font-weight:bold; color:#333; }
-.header-nav a{ text-decoration:none; padding:8px 15px; margin-left:10px; border-radius:50px; font-weight:500; }
-.btn-primary{ background:#ff6b6b; color:white; }
-.btn-secondary{ border:1px solid #ff6b6b; color:#ff6b6b; }
+/* HEADER FIXE AVEC ESPACE LARGE À DROITE */
+.home-header {
+    position: fixed;
+    top: 0;
+    width: 92%;
+    display: flex;
+    align-items: center;
+    padding: 20px 100px 20px 40px; /* padding-right beaucoup plus large */
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    z-index: 1000;
+    flex-wrap: wrap;
+}
 
-.theme-search{ margin-top:90px; text-align:center; }
-.theme-search input{ padding:8px 15px; width:250px; border-radius:50px; border:1px solid #ccc; }
-.theme-search button{ padding:8px 15px; margin-left:8px; border-radius:50px; border:none; background:#ff6b6b; color:white; cursor:pointer; }
-.theme-search button:hover{ background:#ff4757; }
+.logo {
+    font-size:2.4rem;
+    font-weight:900;
+    color:#1abc9c;
+    font-family:'Poppins',sans-serif;
+    text-transform:uppercase;
+}
 
-.themes{ display:flex; justify-content:center; gap:12px; margin:20px; flex-wrap:wrap; }
-.theme-bubble{ padding:8px 18px; border-radius:50px; border:1px solid #ccc; background:#f8f8f8; cursor:pointer; }
-.theme-bubble.active, .theme-bubble:hover{ background:#ff6b6b; color:white; }
+.header-nav {
+    display: flex;
+    gap: 15px;
+    margin-left: auto; /* pousse les boutons à droite */
+    flex-wrap: wrap;
+}
 
-.photo-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; padding:0 50px 50px; }
-.photo-card{ overflow:hidden; border-radius:10px; }
-.photo-wrapper{ position:relative; }
-.photo-card img{ width:100%; transition:0.4s; }
-.photo-card:hover img{ transform:scale(1.1); }
-.overlay{ position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.5); color:white; padding:10px; opacity:0; }
-.photo-card:hover .overlay{ opacity:1; }
+.header-nav a {
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    white-space: nowrap;
+    font-size: 0.95rem;
+}
 
-.photo-info{ display:none; background:#f4f4f4; padding:10px; margin-top:8px; border-radius:8px; font-size:0.9rem; }
-.toggle-info{ margin-top:5px; padding:6px 12px; border:none; border-radius:5px; background:#ff6b6b; color:white; cursor:pointer; }
-.toggle-info:hover{ background:#ff4757; }
+.btn-primary {
+    background: linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+}
 
-.pagination{ text-align:center; margin:30px; }
-.pagination button{ padding:6px 12px; margin:4px; border:1px solid #ff6b6b; background:white; color:#ff6b6b; border-radius:5px; }
-.pagination button.active{ background:#ff6b6b; color:white; }
+.btn-primary:hover {
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(26,188,156,0.4);
+}
 
-@media(max-width:1200px){ .photo-grid{grid-template-columns:repeat(3,1fr);} }
-@media(max-width:768px){ .photo-grid{grid-template-columns:repeat(2,1fr);} }
-@media(max-width:480px){ .photo-grid{grid-template-columns:1fr;} }
+.btn-secondary {
+    background:white;
+    color:#16a085;
+    border:2px solid #16a085;
+}
+
+.btn-secondary:hover {
+    background:#16a085;
+    color:white;
+    transform:translateY(-2px);
+}
+
+/* SEARCH */
+.theme-search {
+    margin-top:130px;
+    text-align:center;
+}
+
+.theme-search input {
+    padding:12px 22px;
+    width:280px;
+    border-radius:50px;
+    border:1px solid #ccc;
+    outline:none;
+    font-size:1rem;
+}
+
+.theme-search button {
+    padding:12px 22px;
+    margin-left:10px;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    cursor:pointer;
+}
+
+#searchMessage {
+    display:none;
+    margin-top:8px;
+    color:#e74c3c;
+    font-weight:500;
+}
+
+/* THEMES */
+.themes {
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin:25px 0;
+}
+
+.theme-bubble {
+    padding:10px 22px;
+    border-radius:50px;
+    border:1px solid #ddd;
+    background:white;
+    cursor:pointer;
+}
+
+.theme-bubble.active {
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    border:none;
+}
+
+/* PHOTO GRID */
+.photo-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:20px;
+    padding:0 40px 60px;
+}
+
+.photo-card {
+    border-radius:14px;
+    background:white;
+    overflow:hidden;
+    box-shadow:0 10px 25px rgba(0,0,0,0.05);
+    transition:0.3s;
+}
+
+.photo-card:hover {
+    transform:translateY(-6px);
+    box-shadow:0 15px 35px rgba(0,0,0,0.08);
+}
+
+.photo-wrapper {
+    position:relative;
+    height:200px;
+}
+
+.photo-card img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.overlay {
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);
+    color:white;
+    padding:12px;
+    font-size:0.9rem;
+    opacity:0;
+    transition:0.3s;
+}
+
+.photo-card:hover .overlay {
+    opacity:1;
+}
+
+.photo-info {
+    display:none;
+    padding:12px;
+    font-size:0.85rem;
+    background:#f9fafc;
+    border-radius:10px;
+}
+
+.toggle-info {
+    margin:10px;
+    padding:8px 16px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.pagination {
+    text-align:center;
+    margin:30px;
+}
+
+.pagination button {
+    padding:8px 14px;
+    margin:4px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    background:white;
+    cursor:pointer;
+}
+
+.pagination button.active {
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    border:none;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+    .photo-grid {
+        grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    }
+
+    .header-nav a {
+        padding:8px 16px;
+        font-size:0.85rem;
+    }
+}
+
+@media(max-width:480px){
+    .photo-grid {
+        grid-template-columns:1fr;
+    }
+    .header-nav {
+        justify-content: center;
+        margin-left:0;
+        gap:10px;
+        width:100%;
+    }
+    .header-nav a {
+        padding:6px 12px;
+        font-size:0.8rem;
+    }
+}
 </style>
 
 <script>
-const photosPerPage = 12;
-let currentPage = 1;
-let currentTheme = "all";
+const photosPerPage = 15
+let currentPage = 1
+let currentTheme = "all"
 
-const allPhotos = Array.from(document.querySelectorAll(".photo-card"));
-const paginationDiv = document.getElementById("pagination");
-const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"));
-
-const searchInput = document.getElementById("searchTheme");
-const searchMessage = document.getElementById("searchMessage");
-const searchBtn = document.getElementById("searchBtn");
+const allPhotos = Array.from(document.querySelectorAll(".photo-card"))
+const paginationDiv = document.getElementById("pagination")
+const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"))
+const searchInput = document.getElementById("searchTheme")
+const searchMessage = document.getElementById("searchMessage")
+const searchBtn = document.getElementById("searchBtn")
 
 function showPhotos(){
     const filteredPhotos = allPhotos.filter(p =>
-        currentTheme === "all" || p.dataset.theme === currentTheme
-    );
-
-    const totalPages = Math.ceil(filteredPhotos.length / photosPerPage);
-    const start = (currentPage-1) * photosPerPage;
-    const end = start + photosPerPage;
-
-    allPhotos.forEach(p => p.style.display="none");
-    filteredPhotos.slice(start,end).forEach(p => p.style.display="block");
-
-    paginationDiv.innerHTML="";
+        currentTheme==="all" || p.dataset.theme===currentTheme
+    )
+    const totalPages = Math.ceil(filteredPhotos.length/photosPerPage)
+    const start = (currentPage-1)*photosPerPage
+    const end = start+photosPerPage
+    allPhotos.forEach(p=>p.style.display="none")
+    filteredPhotos.slice(start,end).forEach(p=>p.style.display="block")
+    paginationDiv.innerHTML=""
     for(let i=1;i<=totalPages;i++){
-        const btn=document.createElement("button");
-        btn.textContent=i;
-        if(i===currentPage) btn.classList.add("active");
-        btn.onclick=()=>{ currentPage=i; showPhotos(); addToggleInfo(); }
-        paginationDiv.appendChild(btn);
+        const btn=document.createElement("button")
+        btn.textContent=i
+        if(i===currentPage) btn.classList.add("active")
+        btn.onclick=()=>{currentPage=i;showPhotos()}
+        paginationDiv.appendChild(btn)
     }
-
-    addToggleInfo();
 }
+
+document.addEventListener("click", e=>{
+    if(e.target.classList.contains("toggle-info")){
+        const info = e.target.previousElementSibling
+        const open = info.style.display==="block"
+        info.style.display = open ? "none":"block"
+        e.target.textContent = open ? "Voir détails":"Réduire"
+    }
+})
 
 themeButtons.forEach(btn=>{
     btn.addEventListener("click",()=>{
-        themeButtons.forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        currentTheme = btn.dataset.theme;
-        currentPage = 1;
-        searchInput.value="";
-        searchMessage.style.display="none";
-        showPhotos();
-    });
-});
+        themeButtons.forEach(b=>b.classList.remove("active"))
+        btn.classList.add("active")
+        currentTheme = btn.dataset.theme
+        currentPage = 1
+        showPhotos()
+    })
+})
 
 function searchTheme(){
-    const query = searchInput.value.trim().toLowerCase();
-    const matchedButton = themeButtons.find(btn => btn.textContent.toLowerCase().includes(query));
-    if(matchedButton){
-        themeButtons.forEach(b=>b.classList.remove("active"));
-        matchedButton.classList.add("active");
-        currentTheme = matchedButton.dataset.theme;
-        currentPage = 1;
-        searchMessage.style.display="none";
-        showPhotos();
-    } else {
-        searchMessage.style.display="block";
-    }
+    const query = searchInput.value.trim().toLowerCase()
+    const match = themeButtons.find(btn=>btn.textContent.toLowerCase().includes(query))
+    if(match){
+        themeButtons.forEach(b=>b.classList.remove("active"))
+        match.classList.add("active")
+        currentTheme = match.dataset.theme
+        currentPage = 1
+        searchMessage.style.display="none"
+        showPhotos()
+    }else searchMessage.style.display="block"
 }
 
-searchInput.addEventListener("keydown", e=>{
-    if(e.key==="Enter"){ searchTheme(); }
-});
+searchInput.addEventListener("keydown", e=>{if(e.key==="Enter") searchTheme()})
+searchBtn.addEventListener("click", searchTheme)
 
-searchBtn.addEventListener("click", ()=>{ searchTheme(); });
-
-function addToggleInfo(){
-    const toggleButtons = document.querySelectorAll(".toggle-info");
-    toggleButtons.forEach(btn=>{
-        btn.onclick = ()=>{
-            const info = btn.previousElementSibling;
-            if(info.style.display === "block"){
-                info.style.display = "none";
-                btn.textContent = "Voir détails";
-            }else{
-                info.style.display = "block";
-                btn.textContent = "Réduire";
-            }
-        }
-    });
-}
-
-showPhotos();
+showPhotos()
 </script>
 
 {% endblock %}

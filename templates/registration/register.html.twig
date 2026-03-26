@@ -3,21 +3,135 @@
 {% block title %}Register{% endblock %}
 
 {% block body %}
-    {% for flash_error in app.flashes('verify_email_error') %}
-        <div class="alert alert-danger" role="alert">{{ flash_error }}</div>
-    {% endfor %}
+<div class="register-page">
+    <div class="register-form-wrapper">
 
-    <h1>Register</h1>
+        {% for flash_error in app.flashes('verify_email_error') %}
+            <div class="alert alert-danger">{{ flash_error }}</div>
+        {% endfor %}
 
-    {{ form_errors(registrationForm) }}
+        <h1 class="register-title">Créer un compte PIXARA</h1>
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
+        {{ form_start(registrationForm, {'attr': {'class': 'register-form'}}) }}
+            {{ form_row(registrationForm.email, {'attr': {'placeholder': 'Entrez votre email'}}) }}
+            {{ form_row(registrationForm.plainPassword, {'label': 'Mot de passe', 'attr': {'placeholder': 'Entrez votre mot de passe'}}) }}
+            {{ form_row(registrationForm.agreeTerms) }}
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+            <button type="submit" class="btn-register">S’inscrire</button>
+        {{ form_end(registrationForm) }}
+
+        <p class="login-link">Déjà un compte ? <a href="{{ path('app_login') }}">Connectez-vous</a></p>
+    </div>
+</div>
+
+<style>
+body {
+    background:#f5f6fa;
+    font-family:'Inter',sans-serif;
+    margin:0;
+    padding:0;
+    color:#2c3e50;
+}
+
+/* --- FORMULAIRE INSCRIPTION --- */
+.register-page {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.register-form-wrapper {
+    background:#fff;
+    padding:40px 50px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:400px;
+}
+
+.register-title {
+    text-align:center;
+    font-size:2rem;
+    color:#1abc9c;
+    margin-bottom:30px;
+    font-weight:900;
+    font-family:'Poppins',sans-serif;
+}
+
+.register-form label {
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
+}
+
+.register-form input {
+    width:100%;
+    padding:12px 18px;
+    margin-bottom:20px;
+    border-radius:50px;
+    border:1px solid #ccc;
+    font-size:1rem;
+    outline:none;
+    transition:0.3s;
+}
+
+.register-form input:focus {
+    border-color:#1abc9c;
+    box-shadow:0 0 0 3px rgba(26,188,156,0.15);
+}
+
+.btn-register {
+    width:100%;
+    padding:14px 0;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn-register:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 25px rgba(26,188,156,0.4);
+}
+
+.alert-danger {
+    background:#e74c3c1a;
+    color:#e74c3c;
+    padding:10px 15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    text-align:center;
+    font-weight:600;
+}
+
+.login-link {
+    text-align:center;
+    margin-top:15px;
+    font-size:0.9rem;
+}
+
+.login-link a {
+    color:#16a085;
+    font-weight:600;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.login-link a:hover {
+    text-decoration:underline;
+}
+
+/* --- RESPONSIVE --- */
+@media(max-width:480px) {
+    .register-form-wrapper {
+        padding:30px 20px;
+    }
+}
+</style>
 {% endblock %}

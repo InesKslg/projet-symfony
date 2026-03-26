@@ -3,39 +3,154 @@
 {% block title %}Log in!{% endblock %}
 
 {% block body %}
-<form method="post" action="{{ path('app_login') }}">
+<div class="login-page">
+    <form method="post" action="{{ path('app_login') }}" class="login-form">
 
-    {% if error %}
-        <div class="alert alert-danger">
-            {{ error.messageKey|trans(error.messageData, 'security') }}
-        </div>
-    {% endif %}
+        {% if error %}
+            <div class="alert alert-danger">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+        <h1 class="login-title">Connexion à PIXARA</h1>
 
-    <label for="inputEmail">Email</label>
-    <input type="email"
-           value="{{ last_username }}"
-           name="_username"
-           id="inputEmail"
-           class="form-control"
-           autocomplete="email"
-           required
-           autofocus>
+        <label for="inputEmail">Email</label>
+        <input type="email"
+               value="{{ last_username }}"
+               name="_username"
+               id="inputEmail"
+               class="form-control"
+               placeholder="Entrez votre email"
+               autocomplete="email"
+               required
+               autofocus>
 
-    <label for="inputPassword">Password</label>
-    <input type="password"
-           name="_password"
-           id="inputPassword"
-           class="form-control"
-           autocomplete="current-password"
-           required>
+        <label for="inputPassword">Mot de passe</label>
+        <input type="password"
+               name="_password"
+               id="inputPassword"
+               class="form-control"
+               placeholder="Entrez votre mot de passe"
+               autocomplete="current-password"
+               required>
 
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
+        <button class="btn-login" type="submit">Se connecter</button>
 
-</form>
+        <p class="register-link">Pas encore de compte ? <a href="{{ path('app_register') }}">Inscrivez-vous</a></p>
+
+    </form>
+</div>
+
+<style>
+/* --- PAGE LOGIN --- */
+body {
+    background:#f5f6fa;
+    font-family:'Inter',sans-serif;
+    margin:0;
+    padding:0;
+    color:#2c3e50;
+}
+
+.login-page {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.login-form {
+    background:#fff;
+    padding:40px 50px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:400px;
+}
+
+.login-title {
+    text-align:center;
+    font-size:2rem;
+    color:#1abc9c;
+    margin-bottom:30px;
+    font-weight:900;
+    font-family:'Poppins',sans-serif;
+}
+
+.login-form label {
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
+}
+
+.login-form input.form-control {
+    width:100%;
+    padding:12px 18px;
+    margin-bottom:20px;
+    border-radius:50px;
+    border:1px solid #ccc;
+    font-size:1rem;
+    outline:none;
+    transition:0.3s;
+}
+
+.login-form input.form-control:focus {
+    border-color:#1abc9c;
+    box-shadow:0 0 0 3px rgba(26,188,156,0.15);
+}
+
+.btn-login {
+    width:100%;
+    padding:14px 0;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(135deg,#1abc9c,#16a085);
+    color:white;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn-login:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 25px rgba(26,188,156,0.4);
+}
+
+.alert-danger {
+    background:#e74c3c1a;
+    color:#e74c3c;
+    padding:10px 15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    text-align:center;
+    font-weight:600;
+}
+
+.register-link {
+    text-align:center;
+    margin-top:15px;
+    font-size:0.9rem;
+}
+
+.register-link a {
+    color:#16a085;
+    font-weight:600;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.register-link a:hover {
+    text-decoration:underline;
+}
+
+/* --- RESPONSIVE --- */
+@media(max-width:480px) {
+    .login-form {
+        padding:30px 20px;
+    }
+}
+</style>
 {% endblock %}
