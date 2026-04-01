@@ -5,40 +5,45 @@
         <div class="gallery">
             {% for album in albums %}
                 <div class="media-item" data-id="{{ album.id }}">
+                    
                     <p><strong>{{ album.categorie }}</strong></p>
-                    <span class="label-prive">{{ album.status ? 'Public' : 'Privé' }}</span>
 
-                    <div class="album-info" style="display:none; text-align:left; margin-top:5px;">
+                    <!-- Badge statut -->
+                    <span class="label-prive">
+                        {{ album.status ? 'Public' : 'Privé' }}
+                    </span>
+
+                    <div class="album-info">
                         <p><strong>Statut :</strong> {{ album.status ? 'Public' : 'Privé' }}</p>
 
-                        <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
+                        <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST"
+                              onsubmit="return confirm('Supprimer cet album ?');">
                             <button type="submit">Supprimer</button>
                         </form>
 
                         <form action="{{ path('app_add_photo_to_album', {'id': album.id}) }}" method="POST">
                             <p>Sélectionnez les photos privées à ajouter :</p>
-                            <div class="checkbox-list" style="max-height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
+
+                            <div class="checkbox-list">
                                 {% for photo in photos %}
                                     {% if not photo.public and photo.id not in album.photos|map(p => p.id) %}
-                                        <div>
-                                            <label>
-                                                <input type="checkbox" name="photo_ids[]" value="{{ photo.id }}">
-                                                {{ photo.description }}
-                                            </label>
-                                        </div>
+                                        <label>
+                                            <input type="checkbox" name="photo_ids[]" value="{{ photo.id }}">
+                                            {{ photo.description }}
+                                        </label>
                                     {% endif %}
                                 {% endfor %}
-                                {% if photos|filter(p => not p.public and p.id not in album.photos|map(p => p.id))|length == 0 %}
-                                    <p>Toutes vos photos privées sont déjà dans cet album.</p>
-                                {% endif %}
                             </div>
-                            <button type="submit" style="margin-top:10px;">Ajouter à l’album</button>
-                        </form>
 
+                            <button type="submit">Ajouter à l’album</button>
+                        </form>
                     </div>
 
                     <button class="toggle-album-info">Voir détails</button>
-                    <button class="view-album-photos-btn" data-album-id="{{ album.id }}">Voir photos de l’album</button>
+                    <button class="view-album-photos-btn" data-album-id="{{ album.id }}">
+                        Voir photos de l’album
+                    </button>
+
                 </div>
             {% endfor %}
         </div>

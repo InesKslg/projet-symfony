@@ -2,39 +2,51 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PhotosRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\User;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PhotosRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['photo:read']],
+    denormalizationContext: ['groups' => ['photo:write']]
+)]
 class Photos
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['photo:read', 'album:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['photo:read', 'photo:write', 'album:read'])]
     private ?string $photo_url = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?string $description = null;
 
     #[ORM\Column(type: "datetime_immutable", nullable: true)]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?\DateTimeImmutable $date_prise = null;
 
     #[ORM\Column]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?bool $public = null;
 
     /**
      * @var Collection<int, Album>
      */
     #[ORM\ManyToMany(targetEntity: Album::class, mappedBy: 'photos')]
+    #[Groups(['photo:read', 'photo:write'])]
     private Collection $albums;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?string $localisation = null;
 
     /**
@@ -42,12 +54,15 @@ class Photos
      */
     #[ORM\ManyToMany(targetEntity: Themes::class, inversedBy: 'photos')]
     #[ORM\JoinTable(name: 'photos_themes')]
+    #[Groups(['photo:read', 'photo:write'])]
     private Collection $themes;
 
     #[ORM\Column]
+    #[Groups(['photo:read'])]
     private ?\DateTimeImmutable $date_added = null;
 
     #[ORM\ManyToOne(inversedBy: 'photos')]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?User $userPhoto = null;
 
     public function __construct()

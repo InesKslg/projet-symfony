@@ -2,29 +2,40 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ThemeRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ThemeRequestRepository::class)]
+#[ApiResource(
+    normalizationContext: ['groups' => ['themeReq:read']],
+    denormalizationContext: ['groups' => ['themeReq:write']]
+)]
 class ThemeRequest
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['themeReq:read', 'user:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['themeReq:read', 'themeReq:write'])]
     private ?string $title = null;
 
     #[ORM\Column(type: 'text')]
+    #[Groups(['themeReq:read', 'themeReq:write'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'themeRequests')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['themeReq:read', 'themeReq:write'])]
     private ?User $requestedBy = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $status = 'pending'; // pending / accepted / rejected
+    #[Groups(['themeReq:read', 'themeReq:write'])]
+    private ?string $status = 'pending'; 
 
     public function getId(): ?int
     {

@@ -6,6 +6,7 @@ use App\Entity\Photos;
 use App\Entity\Themes;
 use App\Entity\Album;
 use App\Form\AlbumType;
+use App\Repository\AlbumRepository;
 use App\Entity\ThemeRequest;
 use App\Form\ThemeRequestType;
 use App\Entity\Notification;
@@ -31,8 +32,18 @@ final class ProductController extends AbstractController
             4
         );
 
+        // Photos privées
         $privatePhotos = $em->getRepository(Photos::class)->findBy(
             ['userPhoto' => $user, 'public' => false],
+            ['date_added' => 'DESC']
+        );
+
+        // Photos publiques (SEULEMENT les photos de l'utilisateur connecté)
+        $publicPhotos = $em->getRepository(Photos::class)->findBy(
+            [
+                'userPhoto' => $user, // 🔥 correction ici
+                'public' => true
+            ],
             ['date_added' => 'DESC']
         );
 
@@ -59,6 +70,7 @@ final class ProductController extends AbstractController
             'requestedBy' => $user,
             'status' => 'pending'
         ]);
+
         if ($pendingCount >= 4) {
             $this->addFlash('error', 'Vous avez déjà 4 demandes en attente.');
         }
@@ -72,7 +84,8 @@ final class ProductController extends AbstractController
         }
 
         return $this->render('product/index.html.twig', [
-            'photos' => $privatePhotos,
+            'privatePhotos' => $privatePhotos,
+            'publicPhotos' => $publicPhotos,
             'albums' => $albums,
             'albumForm' => $albumForm->createView(),
             'themes' => $themes,
@@ -97,7 +110,7 @@ final class ProductController extends AbstractController
 
         $photo = new Photos();
         $photo->setPhotoUrl($filename)
-              ->setDescription($request->request->get('description'))
+              ->setDescription($request->request->get('description') ?? '')
               ->setPublic($request->request->has('public'))
               ->setDateAdded(new \DateTimeImmutable())
               ->setUserPhoto($user);
@@ -179,10 +192,7 @@ final class ProductController extends AbstractController
     #[Route('/album/{id}/add-photo', name:'app_add_photo_to_album', methods:['POST'])]
     public function addPhotoToAlbum(Request $request, EntityManagerInterface $em, Album $album): Response
     {
-        $user = $this->getUser();
-
-        // Récupère les IDs des photos sélectionnées correctement
-        $photoIds = $request->request->all('photo_ids'); // <- retourne un tableau
+        $photoIds = $request->request->all('photo_ids');
 
         if (empty($photoIds)) {
             $this->addFlash('error', 'Veuillez sélectionner au moins une photo.');
@@ -203,13 +213,21 @@ final class ProductController extends AbstractController
         return $this->redirectToRoute('app_welcome');
     }
 
-    #[Route('/album/{id}/photos', name:'app_album_photos')]
-    public function albumPhotos(Album $album): Response
+    #[Route('/album/{id}/photos', name: 'app_album_photos', methods: ['GET'])]
+    public function getAlbumPhotos(int $id, AlbumRepository $albumRepository): JsonResponse
     {
-        return $this->render('album/_photos.html.twig', [
-            'album' => $album,
-            'photos' => $album->getPhotos(), // toutes les photos liées à l'album
-        ]);
+        $album = $albumRepository->find($id);
+        if (!$album) return $this->json(['error' => 'Album introuvable'], 404);
+
+        $photos = $album->getPhotos()->map(fn($photo) => [
+            'id' => $photo->getId(),
+            'description' => $photo->getDescription(),
+            'photoUrl' => $photo->getPhotoUrl(),
+            'public' => $photo->isPublic(),
+            'themes' => array_map(fn($t) => ['nom' => $t->getNom()], $photo->getThemes()->toArray()),
+        ])->toArray();
+
+        return $this->json($photos);
     }
 
     #[Route('/album/{id}/json', name: 'app_album_json', methods:['GET'])]

@@ -6,3 +6,52 @@
         </button>
     {% endfor %}
 </div>
+
+<div id="privatePhotosContainer" class="gallery">
+    {% for photo in privatePhotos %}
+        <div class="media-item" data-theme="{{ photo.themes|map(t => t.id)|join(',') }}">
+            <img src="{{ asset('uploads/photos/' ~ photo.photoUrl) }}" alt="photo">
+            <!-- reste du contenu -->
+        </div>
+    {% endfor %}
+</div>
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const themeButtons = Array.from(document.querySelectorAll(".theme-bubble"));
+
+    themeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Gestion de l'état actif
+            themeButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const selectedTheme = btn.dataset.theme;
+            const activeGallery = document.querySelector('.tab-content[style*="block"] .gallery');
+            if(!activeGallery) return;
+
+            const items = Array.from(activeGallery.querySelectorAll('.media-item'));
+
+            items.forEach(item => {
+                if(selectedTheme === "all") {
+                    item.style.display = "block";
+                } else {
+                    // On prend tous les thèmes de la photo et on vérifie si le thème sélectionné est inclus
+                    const itemThemes = item.dataset.theme.split(',').map(t => t.trim());
+                    item.style.display = itemThemes.includes(selectedTheme) ? "block" : "none";
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+.themes { display:flex;flex-wrap:wrap;gap:10px;margin:20px 0; }
+.theme-bubble { padding:8px 16px;border-radius:50px;border:1px solid #ddd;background:white;cursor:pointer; }
+.theme-bubble.active { background:#1abc9c;color:white;border:none; }
+</style>
+{% endblock %}
