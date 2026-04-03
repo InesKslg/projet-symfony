@@ -17,10 +17,6 @@ class AlbumType extends AbstractType
         $builder
             ->add('categorie', TextType::class, [
                 'label' => 'Titre / Catégorie de l’album',
-            ])
-            ->add('status', CheckboxType::class, [
-                'label' => 'Album public',
-                'required' => false,
             ]);
     }
 

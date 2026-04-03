@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 #[ApiResource(
@@ -24,6 +25,10 @@ class Album
 
     #[ORM\Column(length: 255)]
     #[Groups(['album:read', 'album:write'])]
+    #[Assert\Length(
+        max: 6,
+        maxMessage: "Le nom de l'album ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $categorie = null;
 
     /**
@@ -37,10 +42,6 @@ class Album
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['album:read', 'album:write'])]
     private ?User $user = null;
-
-    #[ORM\Column(type: 'boolean')]
-    #[Groups(['album:read', 'album:write'])]
-    private bool $status = true;
 
     public function __construct()
     {
@@ -93,17 +94,6 @@ class Album
     public function setUser(?User $user): static
     {
         $this->user = $user;
-        return $this;
-    }
-
-    public function isStatus(): bool
-    {
-        return $this->status;
-    }
-
-    public function setStatus(bool $status): static
-    {
-        $this->status = $status;
         return $this;
     }
 }

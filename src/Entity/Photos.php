@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PhotosRepository::class)]
 #[ApiResource(
@@ -28,6 +29,10 @@ class Photos
 
     #[ORM\Column(length: 255)]
     #[Groups(['photo:read', 'photo:write'])]
+    #[Assert\Length(
+        max: 6,
+        maxMessage: "Le nom de la photo ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $description = null;
 
     #[ORM\Column(type: "datetime_immutable", nullable: true)]

@@ -213,6 +213,15 @@ final class ProductController extends AbstractController
         return $this->redirectToRoute('app_welcome');
     }
 
+    #[Route('/album/{id}/view', name: 'app_view_album')]
+    public function viewAlbum(Album $album): Response
+    {
+        return $this->render('album/view.html.twig', [
+            'album' => $album,
+            'photos' => $album->getPhotos(),
+        ]);
+    }
+
     #[Route('/album/{id}/photos', name: 'app_album_photos', methods: ['GET'])]
     public function getAlbumPhotos(int $id, AlbumRepository $albumRepository): JsonResponse
     {
