@@ -147,6 +147,89 @@
 </div>
 
 <!-- MODALS -->
+
+<div id="addMediaModal" class="modal">
+    <div class="modal-content">
+        <h2>Ajouter / Modifier une photo</h2>
+        <form action="{{ path('app_upload_photo') }}" method="POST" enctype="multipart/form-data">
+            <label>Photo</label>
+            <input type="file" name="photo_file" accept="image/*" required>
+            <label>Description</label>
+            <input type="text" name="description" required>
+            <label>Thème</label>
+            <select name="theme_id">
+                <option value="">-- Choisir un thème --</option>
+                {% for theme in themes %}
+                    <option value="{{ theme.id }}">{{ theme.nom }}</option>
+                {% endfor %}
+            </select>
+            <label><input type="checkbox" name="public"> Publier en public</label>
+            <button type="submit">Publier</button>
+        </form>
+        <button id="closeModal">×</button>
+    </div>
+</div>
+
+<div id="addAlbumModal" class="modal">
+    <div class="modal-content">
+        <h2>Ajouter un nouvel album</h2>
+        {{ form_start(albumForm) }}
+            {{ form_row(albumForm.categorie, { 'label': 'Titre / Catégorie de l’album' }) }}
+            <button type="submit">Créer l’album</button>
+        {{ form_end(albumForm) }}
+        <button id="closeAlbumModal">×</button>
+    </div>
+</div>
+
+<div id="themeRequestModal" class="modal">
+    <div class="modal-content">
+        <h2>Demander un nouveau thème</h2>
+        <div id="themeError" style="color:red;"></div>
+        <form id="themeRequestForm">
+            <label for="title">Titre</label>
+            <input type="text" name="title" id="title" required>
+            <label for="description">Description</label>
+            <textarea name="description" id="description" required></textarea>
+            <button type="submit">Envoyer la demande</button>
+        </form>
+        <button id="closeThemeModal">×</button>
+    </div>
+</div>
+
+<div id="viewAlbumModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalAlbumTitle">Photos de l’album</h2>
+
+        <!-- Container pour les photos en scroll -->
+        <div id="albumPhotosContainer" class="album-photos-container"></div>
+
+        <button id="closeAlbumPhotosModal">×</button>
+    </div>
+</div>
+
+<!-- Modal Modifier la photo -->
+<div id="editPhotoModal" class="modal">
+    <div class="modal-content">
+        <h2>Modifier la photo</h2>
+        <form id="editPhotoForm">
+            <input type="hidden" name="photo_id" value="">
+            <label>Description</label>
+            <input type="text" name="description" required>
+            <label><input type="checkbox" name="public"> Photo publique</label>
+            <button type="submit">Enregistrer</button>
+        </form>
+        <button id="closeEditPhotoModal">×</button>
+    </div>
+</div>
+
+<!-- Modal Détails photo -->
+<div id="photoDetailModal" class="modal">
+    <div class="modal-content">
+        <h2>Détails de la photo</h2>
+        <div id="photoDetailContainer"></div>
+        <button id="closePhotoDetailModal">×</button>
+    </div>
+</div>
 <div id="photoDetailModal" class="modal">
     <div class="modal-content">
         <h2>Détails de la photo</h2>
@@ -201,6 +284,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('closePhotoDetailModal').addEventListener('click', () => {
         document.getElementById('photoDetailModal').style.display = 'none';
+    });
+
+    // --- Toggle modals Ajouter / Album / Thème ---
+    const addMediaBtn = document.getElementById('addMediaBtn');
+    const addAlbumBtn = document.getElementById('addAlbumBtn');
+    const requestThemeBtn = document.getElementById('requestThemeBtn');
+
+    const addMediaModal = document.getElementById('addMediaModal');
+    const addAlbumModal = document.getElementById('addAlbumModal');
+    const themeRequestModal = document.getElementById('themeRequestModal');
+
+    const closeMediaModal = document.getElementById('closeModal');
+    const closeAlbumModal = document.getElementById('closeAlbumModal');
+    const closeThemeModal = document.getElementById('closeThemeModal');
+
+    if (addMediaBtn) addMediaBtn.addEventListener('click', () => { addMediaModal.style.display = 'flex'; });
+    if (addAlbumBtn) addAlbumBtn.addEventListener('click', () => { addAlbumModal.style.display = 'flex'; });
+    if (requestThemeBtn) requestThemeBtn.addEventListener('click', () => { themeRequestModal.style.display = 'flex'; });
+
+    if (closeMediaModal) closeMediaModal.addEventListener('click', () => { addMediaModal.style.display = 'none'; });
+    if (closeAlbumModal) closeAlbumModal.addEventListener('click', () => { addAlbumModal.style.display = 'none'; });
+    if (closeThemeModal) closeThemeModal.addEventListener('click', () => { themeRequestModal.style.display = 'none'; });
+
+    // --- TABS ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const target = tab.dataset.tab;
+            tabContents.forEach(tc => {
+                tc.style.display = tc.id === target ? 'block' : 'none';
+            });
+        });
+    });
+
+    // --- Filtres thèmes ---
+    document.querySelectorAll('.theme-bubble').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const parent = btn.closest('.tab-content');
+            if (!parent) return;
+
+            const theme = btn.dataset.theme;
+            parent.querySelectorAll('.theme-bubble').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            parent.querySelectorAll('.gallery .media-item').forEach(item => {
+                const itemThemes = item.dataset.theme.split(',');
+                if (theme === 'all' || itemThemes.includes(theme)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
     });
 
 });

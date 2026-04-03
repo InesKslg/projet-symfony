@@ -15,7 +15,6 @@
         {{ form_start(registrationForm, {'attr': {'class': 'register-form'}}) }}
             {{ form_row(registrationForm.email, {'attr': {'placeholder': 'Entrez votre email'}}) }}
             {{ form_row(registrationForm.plainPassword, {'label': 'Mot de passe', 'attr': {'placeholder': 'Entrez votre mot de passe'}}) }}
-            {{ form_row(registrationForm.agreeTerms) }}
 
             <button type="submit" class="btn-register">S’inscrire</button>
         {{ form_end(registrationForm) }}
