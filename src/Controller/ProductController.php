@@ -213,6 +213,23 @@ final class ProductController extends AbstractController
         return $this->redirectToRoute('app_welcome');
     }
 
+    #[Route('/album/{id}/edit', name: 'app_edit_album', methods: ['POST'])]
+    public function editAlbum(Request $request, EntityManagerInterface $em, Album $album): Response
+    {
+        if ($album->getUser() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $categorie = $request->request->get('categorie');
+        if ($categorie) {
+            $album->setCategorie($categorie);
+            $em->flush();
+            $this->addFlash('success', 'Album renommé !');
+        }
+
+        return $this->redirectToRoute('app_welcome');
+    }
+
     #[Route('/album/{id}/view', name: 'app_view_album')]
     public function viewAlbum(Album $album): Response
     {
@@ -248,8 +265,7 @@ final class ProductController extends AbstractController
                 'id' => $photo->getId(),
                 'photoUrl' => $photo->getPhotoUrl(),
                 'description' => $photo->getDescription(),
-                'public' => $photo->isPublic(),
-                'theme' => $photo->getThemes()->first() ? $photo->getThemes()->first()->getNom() : null,
+                'themes' => $photo->getThemes()->map(fn($t) => $t->getNom())->toArray(),
             ];
         }
         return $this->json([

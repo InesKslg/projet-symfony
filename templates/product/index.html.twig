@@ -104,42 +104,27 @@
 <!-- ALBUMS -->
 <div id="albumsTab" class="tab-content" style="display:none;">
     {% if albums is empty %}
-        <p>Vous n'avez aucun album pour l'instant.</p>
+        <p style="text-align:center; color:#888; margin-top:2rem;">Vous n'avez aucun album pour l'instant.</p>
     {% else %}
         <div class="gallery">
             {% for album in albums %}
-                <div class="media-item" data-id="{{ album.id }}">
-                    <p><strong>{{ album.categorie }}</strong></p>
+                <div class="media-item" data-id="{{ album.id }}" style="padding:12px;">
+                    <p style="font-weight:700; font-size:1rem; color:#1abc9c; margin:8px 0;">{{ album.categorie }}</p>
 
-                    <div class="album-info" style="display:none; text-align:left; margin-top:5px;">
-                        
-                        <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
-                            <button type="submit">Supprimer</button>
-                        </form>
-
-                        <form action="{{ path('app_add_photo_to_album', {'id': album.id}) }}" method="POST">
-                            <p>Sélectionnez les photos privées à ajouter :</p>
-                            <div class="checkbox-list" style="max-height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
-                                {% set availablePhotos = privatePhotos|filter(p => not p.public and p.id not in album.photos|map(p => p.id)) %}
-                                {% for photo in availablePhotos %}
-                                    <div>
-                                        <label>
-                                            <input type="checkbox" name="photo_ids[]" value="{{ photo.id }}">
-                                            {{ photo.description }}
-                                        </label>
-                                    </div>
-                                {% endfor %}
-                                {% if availablePhotos|length == 0 %}
-                                    <p>Toutes vos photos privées sont déjà dans cet album.</p>
-                                {% endif %}
-                            </div>
-                            <button type="submit" style="margin-top:10px;">Ajouter à l’album</button>
+                    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                        <button class="view-album-photos-btn btn" data-album-id="{{ album.id }}">
+                            📷 Voir photos
+                        </button>
+                        <button class="manage-album-btn btn"
+                                data-album-id="{{ album.id }}"
+                                data-album-name="{{ album.categorie }}">
+                            ⚙️ Gérer l'album
+                        </button>
+                        <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST"
+                              onsubmit="return confirm('Supprimer cet album ?');">
+                            <button type="submit" style="background:#e74c3c; width:100%;">🗑 Supprimer</button>
                         </form>
                     </div>
-
-                    <button class="toggle-album-info">Voir détails</button>
-                    <button class="view-album-photos-btn" data-album-id="{{ album.id }}">Voir photos de l’album</button>
-                    
                 </div>
             {% endfor %}
         </div>
@@ -237,13 +222,54 @@
         <button id="closePhotoDetailModal">×</button>
     </div>
 </div>
+
+<!-- Modal Gérer Album -->
+<div id="manageAlbumModal" class="modal">
+    <div class="modal-content" style="max-width:500px; max-height:90vh; overflow-y:auto;">
+        <h2>⚙️ Gérer l'album</h2>
+
+        <!-- Infos -->
+        <div id="manageAlbumInfos" style="background:#f4f6f8; border-radius:10px; padding:10px; font-size:0.85rem; margin-bottom:14px;"></div>
+
+        <!-- Renommer -->
+        <form id="renameAlbumForm" method="POST" style="margin-bottom:18px;">
+            <label style="font-size:0.85rem; font-weight:600;">
+                ✏️ Renommer l'album <span style="color:#aaa; font-weight:400;">(max 6 caractères)</span>
+            </label>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <input type="text" name="categorie" id="renameAlbumInput" maxlength="6" required
+                       style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-size:0.85rem;">
+                <button type="submit" style="background:#1abc9c; white-space:nowrap;">Renommer</button>
+            </div>
+        </form>
+
+        <hr style="border:none; border-top:1px solid #eee; margin-bottom:16px;">
+
+        <!-- Ajouter des photos -->
+        <form id="addPhotosToAlbumForm" method="POST">
+            <label style="font-size:0.85rem; font-weight:600;">📁 Ajouter des photos à l'album</label>
+            <p style="font-size:0.78rem; color:#888; margin:4px 0 10px;">Seules les photos absentes de l'album sont affichées.</p>
+            <div id="manageAlbumPhotosList"
+                 style="display:flex; flex-wrap:wrap; gap:10px; max-height:280px; overflow-y:auto; padding:4px 0;"></div>
+            <button type="submit" style="margin-top:12px; width:100%; background:#1abc9c;">
+                ✅ Ajouter les photos cochées
+            </button>
+        </form>
+
+        <button id="closeManageAlbumModal">×</button>
+    </div>
+</div>
+
+
 {% endblock %}
 
 {% block javascripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Toggle modal "Voir détails" pour photos ---
+    /* =========================
+       PHOTO DETAILS
+    ========================= */
     document.querySelectorAll('.toggle-info').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -253,13 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const description = parent.querySelector('.photo-desc')?.innerText || '';
             const formActionEdit = parent.querySelector('form[action*="edit"]')?.action || '';
             const formActionDelete = parent.querySelector('form[action*="delete"]')?.action || '';
+
             const localisation = parent.querySelector('.photo-info p:nth-child(2)')?.innerText.replace('Localisation : ', '') || 'Non renseignée';
             const datePrise = parent.querySelector('.photo-info p:nth-child(3)')?.innerText.replace('Date : ', '') || 'Non renseignée';
             const theme = parent.querySelector('.photo-info p:nth-child(4)')?.innerText.replace('Thème : ', '') || '';
+
             const isPublic = parent.querySelector('input[name="public"]')?.checked || false;
             const statut = isPublic ? 'Public' : 'Privé';
 
             const container = document.getElementById('photoDetailContainer');
+
             container.innerHTML = `
                 <p><strong>Description :</strong> ${description}</p>
                 <p><strong>Localisation :</strong> ${localisation}</p>
@@ -282,11 +311,176 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.getElementById('closePhotoDetailModal').addEventListener('click', () => {
+    document.getElementById('closePhotoDetailModal')?.addEventListener('click', () => {
         document.getElementById('photoDetailModal').style.display = 'none';
     });
 
-    // --- Toggle modals Ajouter / Album / Thème ---
+
+    /* =========================
+       ALBUM PHOTOS MODAL
+    ========================= */
+    const albumPhotosModal = document.getElementById('viewAlbumModal');
+    const closeAlbumPhotosModal = document.getElementById('closeAlbumPhotosModal');
+
+    document.addEventListener('click', (e) => {
+
+        if (e.target.classList.contains('view-album-photos-btn')) {
+
+            const albumId = e.target.dataset.albumId;
+
+            const container = document.getElementById('albumPhotosContainer');
+            const title = document.getElementById('modalAlbumTitle');
+
+            albumPhotosModal.style.display = 'flex';
+            container.innerHTML = "Chargement...";
+
+            fetch(`/album/${albumId}/json`)
+                .then(res => res.json())
+                .then(data => {
+
+                    title.textContent = `Album : ${data.albumName}`;
+                    container.innerHTML = '';
+
+                    if (!data.photos || data.photos.length === 0) {
+                        container.innerHTML = "Aucune photo";
+                        return;
+                    }
+                    data.photos.forEach(photo => {
+                        const div = document.createElement('div');
+                        div.classList.add('media-item');
+
+                        div.innerHTML = `
+                            <img src="/uploads/photos/${photo.photoUrl}">
+                            <p class="photo-desc">${photo.description ?? ''}</p>
+                            <form action="/photo/${photo.id}/delete" method="POST"
+                                onsubmit="return confirm('Supprimer cette photo ?');"
+                                style="padding: 6px 8px;">
+                                <button type="submit"
+                                        style="background:#e74c3c; width:100%; padding:5px 8px;
+                                            border:none; border-radius:15px; color:#fff;
+                                            cursor:pointer; font-size:0.85rem;">
+                                    Supprimer
+                                </button>
+                            </form>
+                        `;
+
+                        container.appendChild(div);
+                    });
+                })
+                .catch(() => {
+                    container.innerHTML = "Erreur chargement";
+                });
+        }
+    });
+
+    if (closeAlbumPhotosModal) {
+        closeAlbumPhotosModal.addEventListener('click', () => {
+            albumPhotosModal.style.display = 'none';
+        });
+    }
+
+    /* =========================
+    GÉRER ALBUM
+    ========================= */
+    const manageAlbumModal = document.getElementById('manageAlbumModal');
+
+    // Snapshot des photos user depuis Twig
+    const allUserPhotos = [
+        {% for photo in privatePhotos %}
+        {
+            id: {{ photo.id }},
+            url: "{{ photo.photoUrl }}",
+            description: {{ photo.description|json_encode|raw }},
+        },
+        {% endfor %}
+        {% for photo in publicPhotos %}
+        {
+            id: {{ photo.id }},
+            url: "{{ photo.photoUrl }}",
+            description: {{ photo.description|json_encode|raw }},
+            themes: "{{ photo.themes|map(t => t.nom)|join(', ') }}"
+        },
+        {% endfor %}
+    ];
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('manage-album-btn')) return;
+
+        const albumId   = e.target.dataset.albumId;
+        const albumName = e.target.dataset.albumName;
+
+        manageAlbumModal.style.display = 'flex';
+
+        // Formulaire renommer
+        const renameForm = document.getElementById('renameAlbumForm');
+        renameForm.action = `/album/${albumId}/edit`;
+        document.getElementById('renameAlbumInput').value = albumName;
+
+        // Formulaire ajout photos
+        const addForm = document.getElementById('addPhotosToAlbumForm');
+        addForm.action = `/album/${albumId}/add-photo`;
+
+        // Charger les données de l'album via JSON
+        document.getElementById('manageAlbumInfos').innerHTML = 'Chargement…';
+        document.getElementById('manageAlbumPhotosList').innerHTML = '';
+
+        fetch(`/album/${albumId}/json`)
+            .then(res => res.json())
+            .then(data => {
+                const albumPhotoIds = (data.photos || []).map(p => p.id);
+
+                document.getElementById('manageAlbumInfos').innerHTML = `
+                    <p style="margin:0 0 4px;"><strong>📛 Nom :</strong> ${data.albumName}</p>
+                    <p style="margin:0;"><strong>📷 Nombre de photos :</strong> ${albumPhotoIds.length}</p>
+                `;
+
+                // Photos pas encore dans l'album
+                const photosList = document.getElementById('manageAlbumPhotosList');
+                const photosToShow = allUserPhotos.filter(p => !albumPhotoIds.includes(p.id));
+
+                if (photosToShow.length === 0) {
+                    photosList.innerHTML = '<p style="font-size:0.85rem; color:#888; width:100%;">Toutes vos photos sont déjà dans cet album.</p>';
+                    return;
+                }
+
+                photosToShow.forEach(photo => {
+                    const label = document.createElement('label');
+                    label.style.cssText = `
+                        display:flex; flex-direction:column; align-items:center;
+                        width:88px; cursor:pointer; font-size:0.72rem;
+                        text-align:center; gap:4px;
+                    `;
+                    label.innerHTML = `
+                        <div style="position:relative; width:80px; height:80px;">
+                            <img src="/uploads/photos/${photo.url}"
+                                style="width:80px; height:80px; object-fit:cover;
+                                        border-radius:8px; border:2px solid #eee;">
+                            <input type="checkbox" name="photo_ids[]" value="${photo.id}"
+                                style="position:absolute; top:4px; right:4px;
+                                        width:16px; height:16px; cursor:pointer;">
+                        </div>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:84px;">
+                            ${photo.description}
+                        </span>
+                        <span style="color:#1abc9c;">${photo.themes}</span>
+                    `;
+                    photosList.appendChild(label);
+                });
+            })
+            .catch(() => {
+                document.getElementById('manageAlbumInfos').innerHTML =
+                    '<p style="color:red;">Erreur de chargement.</p>';
+            });
+    });
+
+    document.getElementById('closeManageAlbumModal')?.addEventListener('click', () => {
+        manageAlbumModal.style.display = 'none';
+    });
+
+
+    /* =========================
+       MODALS OUVERTURE
+    ========================= */
     const addMediaBtn = document.getElementById('addMediaBtn');
     const addAlbumBtn = document.getElementById('addAlbumBtn');
     const requestThemeBtn = document.getElementById('requestThemeBtn');
@@ -299,15 +493,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeAlbumModal = document.getElementById('closeAlbumModal');
     const closeThemeModal = document.getElementById('closeThemeModal');
 
-    if (addMediaBtn) addMediaBtn.addEventListener('click', () => { addMediaModal.style.display = 'flex'; });
-    if (addAlbumBtn) addAlbumBtn.addEventListener('click', () => { addAlbumModal.style.display = 'flex'; });
-    if (requestThemeBtn) requestThemeBtn.addEventListener('click', () => { themeRequestModal.style.display = 'flex'; });
+    if (addMediaBtn) addMediaBtn.addEventListener('click', () => addMediaModal.style.display = 'flex');
+    if (addAlbumBtn) addAlbumBtn.addEventListener('click', () => addAlbumModal.style.display = 'flex');
+    if (requestThemeBtn) requestThemeBtn.addEventListener('click', () => themeRequestModal.style.display = 'flex');
 
-    if (closeMediaModal) closeMediaModal.addEventListener('click', () => { addMediaModal.style.display = 'none'; });
-    if (closeAlbumModal) closeAlbumModal.addEventListener('click', () => { addAlbumModal.style.display = 'none'; });
-    if (closeThemeModal) closeThemeModal.addEventListener('click', () => { themeRequestModal.style.display = 'none'; });
+    if (closeMediaModal) closeMediaModal.addEventListener('click', () => addMediaModal.style.display = 'none');
+    if (closeAlbumModal) closeAlbumModal.addEventListener('click', () => addAlbumModal.style.display = 'none');
+    if (closeThemeModal) closeThemeModal.addEventListener('click', () => themeRequestModal.style.display = 'none');
 
-    // --- TABS ---
+
+    /* =========================
+       TABS
+    ========================= */
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
@@ -315,25 +512,33 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
+
             const target = tab.dataset.tab;
+
             tabContents.forEach(tc => {
                 tc.style.display = tc.id === target ? 'block' : 'none';
             });
         });
     });
 
-    // --- Filtres thèmes ---
+
+    /* =========================
+       FILTER THEME
+    ========================= */
     document.querySelectorAll('.theme-bubble').forEach(btn => {
         btn.addEventListener('click', () => {
+
             const parent = btn.closest('.tab-content');
             if (!parent) return;
 
             const theme = btn.dataset.theme;
+
             parent.querySelectorAll('.theme-bubble').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
             parent.querySelectorAll('.gallery .media-item').forEach(item => {
                 const itemThemes = item.dataset.theme.split(',');
+
                 if (theme === 'all' || itemThemes.includes(theme)) {
                     item.style.display = 'block';
                 } else {
@@ -384,13 +589,13 @@ nav {
 .toggle-album-info,
 .view-album-photos-btn,
 .modal-content button {
-    padding: 10px 16px;          
+    padding: 5px 8px;          
     font-size: 0.85rem;         
-    border-radius: 8px;         
-    font-weight: 600;
+    border-radius: 15px;         
+    font-weight: 400;
     border: none;
     cursor: pointer;
-    background: #1abc9c;         
+    background: #6dc7b5;         
     color: #fff;
     transition: all 0.3s ease;
 }
@@ -465,7 +670,7 @@ nav {
 }
 
 .media-item {
-    width: 200px; /* réduit pour plusieurs photos sur la même ligne */
+    width: 200px;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
@@ -482,7 +687,7 @@ nav {
 
 .media-item img {
     width: 100%;
-    height: 140px; /* hauteur fixe pour uniformiser toutes les photos */
+    height: 140px;
     object-fit: cover;
     border-bottom: 1px solid #eee;
 }
@@ -519,67 +724,31 @@ nav {
     font-size: 0.85rem;
 }
 
-/* --- PHOTOS ALBUM PHOTOS MODAL : affichage comme galerie principale --- */
+/* --- ALBUM PHOTOS MODAL --- */
 .album-photos-container {
     display: flex;
-    flex-wrap: wrap;       /* permet plusieurs photos par ligne */
-    gap: 15px;             /* même espacement que galerie principale */
+    flex-wrap: wrap;
+    gap: 15px;
     justify-content: center;
-    max-height: 80vh;      /* pour le scroll vertical */
+    max-height: 80vh;
     overflow-y: auto;
     padding-right: 10px;
 }
 
 .album-photos-container .media-item {
-    width: 200px;          /* même largeur que galerie principale */
+    width: 200px;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.3s, box-shadow 0.3s;
-    position: relative;
-    text-align: center;
-}
-
-.album-photos-container .media-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
 }
 
 .album-photos-container .media-item img {
     width: 100%;
-    height: 140px;         /* même hauteur que galerie principale */
+    height: 140px;
     object-fit: cover;
-    border-bottom: 1px solid #eee;
 }
 
-.album-photos-container .photo-desc {
-    padding: 6px 8px;
-    font-size: 0.85rem;
-    color: #555;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.album-photos-container .media-item form {
-    margin-top: 8px;
-}
-
-.album-photos-container .media-item button {
-    padding: 8px 12px;
-    background: #e74c3c;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.album-photos-container .media-item button:hover {
-    background: #c0392b;
-}
-
-/* --- MODALS --- */
 .modal {
     display: none;
     position: fixed;
@@ -592,34 +761,36 @@ nav {
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    padding: 20px;
+    padding: 10px;
 }
 
 .modal-content {
     background: #fff;
-    padding: 2rem;
-    border-radius: 20px;
+    padding: 1.2rem;
+    border-radius: 16px;
     width: 100%;
-    max-width: 500px;
+    max-width: 380px; 
     position: relative;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     animation: fadeIn 0.3s ease;
 }
 
 .modal-content h2 {
     text-align: center;
     color: #1abc9c;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
 }
 
 .modal-content input,
 .modal-content select,
 .modal-content textarea {
     width: 100%;
-    margin-bottom: 12px;
-    padding: 10px 12px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
     border-radius: 8px;
     border: 1px solid #ccc;
+    font-size: 0.85rem;
 }
 
 /* --- CLOSE BUTTON --- */
@@ -629,15 +800,15 @@ nav {
 #closeEditPhotoModal,
 #closeAlbumPhotosModal {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 32px;
-    height: 32px;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
     background: #e74c3c;
     color: #fff;
     border: none;
     border-radius: 50%;
-    font-size: 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     justify-content: center;

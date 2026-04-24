@@ -18,7 +18,6 @@ class AdminViewController extends AbstractDashboardController
     #[Route('/admin', name: 'admin')]
     public function index(): Response
     {
-        // Redirige directement vers les demandes de thème
         $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
         return $this->redirect($adminUrlGenerator->setController(ThemeRequestCrudController::class)->generateUrl());
     }
