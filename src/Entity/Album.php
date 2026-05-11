@@ -25,10 +25,8 @@ class Album
 
     #[ORM\Column(length: 255)]
     #[Groups(['album:read', 'album:write'])]
-    #[Assert\Length(
-        max: 6,
-        maxMessage: "Le nom de l'album ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
     private ?string $categorie = null;
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Themes;
+use App\Entity\Notification;
+use App\Entity\User;
 use App\Form\ThemesType;
 use App\Repository\ThemesRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +33,16 @@ final class ThemesController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($theme);
+            $entityManager->flush();
+
+            $users = $entityManager->getRepository(User::class)->findAll();
+            foreach ($users as $user) {
+                $notif = new Notification();
+                $notif->setRecipient($user);
+                $notif->setMessage("Nouveau thème disponible : « {$theme->getNom()} » !");
+                $notif->setIsRead(false);
+                $entityManager->persist($notif);
+            }
             $entityManager->flush();
 
             return $this->redirectToRoute('app_themes_index', [], Response::HTTP_SEE_OTHER);

@@ -19,11 +19,12 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - .:/app   
       #- ./var/log:/app/var/log
     ports:
       # HTTP
       - target: 80
-        published: ${HTTP_PORT:-80}
+        published: ${HTTP_PORT:-8000}
         protocol: tcp
       # HTTPS
       #- target: 443
@@ -49,6 +50,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
+      MERCURE_TRANSPORT_URL: ""   
 
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "$${POSTGRES_DB}", "-U", "$${POSTGRES_USER}"]

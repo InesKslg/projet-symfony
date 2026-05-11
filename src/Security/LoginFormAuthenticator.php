@@ -44,13 +44,13 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
 {
-    // Si l'utilisateur essayait d'accéder à une page protégée avant de se connecter,
-    // Symfony le redirige vers cette page après login.
+    // Si l'utilisateur tentait d'accéder à une page protégée avant de se connecter,
+    // Symfony le redirige vers cette page après la connexion.
     if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
         return new RedirectResponse($targetPath);
     }
 
-    // Sinon, redirection par défaut vers l'admin
+    // Sinon, redirection par défaut vers le tableau de bord admin
     return new RedirectResponse($this->urlGenerator->generate('app_admin'));
 }
 

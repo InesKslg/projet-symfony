@@ -34,7 +34,8 @@ class ThemeRequestCrudController extends AbstractCrudController
         return [
             IdField::new('id')->hideOnForm(),
             TextField::new('title', 'Titre'),
-            TextEditorField::new('description', 'Description'),
+            TextField::new('description', 'Description')->onlyOnIndex(),
+            TextEditorField::new('description', 'Description')->onlyOnDetail(),
             TextField::new('status', 'Statut'),
             AssociationField::new('requestedBy', 'Utilisateur'),
         ];
@@ -48,7 +49,8 @@ class ThemeRequestCrudController extends AbstractCrudController
 
         return $actions
             ->disable(Action::NEW, Action::EDIT, Action::DELETE)
-            ->add(Action::INDEX, $validate);
+            ->add(Action::INDEX, $validate)
+            ->add(Action::INDEX, Action::DETAIL);
     }
 
     public function validateRequest(
@@ -58,10 +60,10 @@ class ThemeRequestCrudController extends AbstractCrudController
         /** @var ThemeRequest $request */
         $request = $context->getEntity()->getInstance();
 
-        // Mise à jour du statut
+        // Mise à jour du statut de la demande
         $request->setStatus('accepted');
 
-        // Empêcher les doublons de notifications
+        // Empêche la création de doublons de notifications
         $existing = $em->getRepository(Notification::class)->findOneBy([
             'recipient' => $request->getRequestedBy(),
             'message' => "Votre demande de thème « {$request->getTitle()} » a été validée !"
@@ -79,7 +81,7 @@ class ThemeRequestCrudController extends AbstractCrudController
 
         $this->addFlash('success', 'Demande validée. Une notification sera affichée à l’utilisateur.');
 
-        // Redirection vers la liste
+        // Redirection vers la liste des demandes
         $url = $this->container->get(AdminUrlGenerator::class)
             ->setController(self::class)
             ->setAction(Crud::PAGE_INDEX)
@@ -88,7 +90,7 @@ class ThemeRequestCrudController extends AbstractCrudController
         return $this->redirect($url);
     }
 
-    // afficher demandes status pending
+    // Affiche uniquement les demandes en attente
     public function createIndexQueryBuilder(
         SearchDto $searchDto,
         EntityDto $entityDto,

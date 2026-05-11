@@ -33,16 +33,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
-    /**
-     * @var list<string> The user roles
-     */
+    /** @var list<string> Rôles de l'utilisateur — non exposés dans l'API pour l'instant */
     #[ORM\Column]
-    // volontairement pas exposé dans l'API pour l’instant
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
+    /** @var string Mot de passe hashé */
     #[ORM\Column]
     #[Groups(['user:write'])]
     private ?string $password = null;
@@ -51,25 +46,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     private bool $isVerified = false;
 
-    /**
-     * @var Collection<int, Photos>
-     */
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
+    private ?string $firstName = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
+    private ?string $lastName = null;
+
+    /** @var Collection<int, Photos> Non exposé pour l'instant */
     #[ORM\OneToMany(targetEntity: Photos::class, mappedBy: 'userPhoto')]
-    // pas exposé pour l’instant
     private Collection $photos;
 
-    /**
-     * @var Collection<int, ThemeRequest>
-     */
+    /** @var Collection<int, ThemeRequest> Non exposé pour l'instant */
     #[ORM\OneToMany(mappedBy: 'requestedBy', targetEntity: ThemeRequest::class)]
-    // pas exposé pour l’instant
     private Collection $themeRequests;
 
-    /**
-     * @var Collection<int, Notification>
-     */
+    /** @var Collection<int, Notification> Non exposé pour l'instant */
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'recipient')]
-    // pas exposé pour l’instant
     private Collection $notifications;
 
     public function __construct()
@@ -95,40 +89,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
+    /** @see UserInterface */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @see UserInterface
-     */
+    /** @see UserInterface */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
+        // Chaque utilisateur a au moins ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
+    /** @param list<string> $roles */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
+    /** @see PasswordAuthenticatedUserInterface */
     public function getPassword(): ?string
     {
         return $this->password;
@@ -140,9 +124,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * Sérialisation personnalisée pour éviter de stocker le mot de passe en clair dans la session.
-     */
+    /** Sérialisation personnalisée pour éviter de stocker le mot de passe en clair dans la session. */
     public function __serialize(): array
     {
         return [
@@ -165,7 +147,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // Nettoie les données sensibles temporaires si tu en ajoutes (ex: plainPassword)
+        // Efface les données sensibles temporaires (ex : plainPassword)
     }
 
     public function isVerified(): bool
@@ -179,9 +161,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Photos>
-     */
+    /** @return Collection<int, Photos> */
     public function getPhotos(): Collection
     {
         return $this->photos;
@@ -208,9 +188,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, ThemeRequest>
-     */
+    /** @return Collection<int, ThemeRequest> */
     public function getThemeRequests(): Collection
     {
         return $this->themeRequests;
@@ -237,14 +215,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getFirstName(): ?string { return $this->firstName; }
+    public function setFirstName(?string $firstName): static { $this->firstName = $firstName; return $this; }
+
+    public function getLastName(): ?string { return $this->lastName; }
+    public function setLastName(?string $lastName): static { $this->lastName = $lastName; return $this; }
+
     public function __toString(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @return Collection<int, Notification>
-     */
+    /** @return Collection<int, Notification> */
     public function getNotifications(): Collection
     {
         return $this->notifications;

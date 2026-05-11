@@ -36,7 +36,7 @@ final class AlbumController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Assignation de l'utilisateur connecté
+            // Associe l'utilisateur connecté à l'album
             $album->setUser($this->getUser());
 
             $em->persist($album);

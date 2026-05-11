@@ -23,13 +23,13 @@ class ThemeRequestController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $themeRequest->setRequestedBy($this->getUser());
-            $themeRequest->setStatus('pending'); // =en attente
+            $themeRequest->setStatus('pending');
 
             $em->persist($themeRequest);
             $em->flush();
 
             $this->addFlash('success', 'Votre demande a été envoyée !');
-            return $this->redirectToRoute('app_home'); // ou la route souhaitée
+            return $this->redirectToRoute('app_home');
         }
 
         return $this->render('theme_request/request.html.twig', [
@@ -37,7 +37,7 @@ class ThemeRequestController extends AbstractController
         ]);
     }
 
-    // Pour que l'utilisateur puisse voir ses demandes
+    // Permet à l'utilisateur de voir ses propres demandes de thème
     #[Route('/theme/my-requests', name: 'app_theme_my_requests')]
     public function myRequests(ThemeRequestRepository $repo): Response
     {

@@ -16,8 +16,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use lsolesen\pel\PelJpeg;
-use lsolesen\pel\PelExif;
 
 final class ProductController extends AbstractController
 {
@@ -28,20 +26,19 @@ final class ProductController extends AbstractController
 
         $notifications = $em->getRepository(Notification::class)->findBy(
             ['recipient' => $user, 'isRead' => false],
-            ['id' => 'DESC'],
-            4
+            ['id' => 'ASC']
         );
 
-        // Photos privées
+        // Photos privées de l'utilisateur
         $privatePhotos = $em->getRepository(Photos::class)->findBy(
             ['userPhoto' => $user, 'public' => false],
             ['date_added' => 'DESC']
         );
 
-        // Photos publiques (SEULEMENT les photos de l'utilisateur connecté)
+        // Photos publiques (uniquement celles de l'utilisateur connecté)
         $publicPhotos = $em->getRepository(Photos::class)->findBy(
             [
-                'userPhoto' => $user, // 🔥 correction ici
+                'userPhoto' => $user,
                 'public' => true
             ],
             ['date_added' => 'DESC']
@@ -57,7 +54,7 @@ final class ProductController extends AbstractController
             $em->persist($album);
             $em->flush();
             $this->addFlash('success', 'Album créé avec succès !');
-            return $this->redirectToRoute('app_welcome'); 
+            return $this->redirectToRoute('app_welcome', ['tab' => 'albums']);
         }
 
         $themes = $em->getRepository(Themes::class)->findAll();
@@ -97,16 +94,27 @@ final class ProductController extends AbstractController
     #[Route('/upload/photo', name: 'app_upload_photo', methods: ['POST'])]
     public function upload(Request $request, EntityManagerInterface $em): Response
     {
-        $user = $this->getUser();
-        $file = $request->files->get('photo_file');
-        if (!$file) {
-            $this->addFlash('error', 'Veuillez sélectionner un fichier.');
+        $isAjax = $request->headers->has('X-Fetch-Request');
+        $user   = $this->getUser();
+        $file   = $request->files->get('photo_file');
+        if (!$file || !$file->isValid()) {
+            if ($isAjax) return $this->json(['error' => 'Fichier invalide ou trop volumineux.'], 400);
+            $this->addFlash('error', 'Fichier invalide ou trop volumineux.');
             return $this->redirectToRoute('app_welcome');
         }
 
         $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads/photos';
-        $filename = uniqid() . '.' . $file->guessExtension();
-        $file->move($uploadsDir, $filename);
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0775, true);
+        }
+        $ext = $file->getClientOriginalExtension() ?: ($file->guessExtension() ?? 'jpg');
+        $filename = uniqid() . '.' . $ext;
+        try {
+            $file->move($uploadsDir, $filename);
+        } catch (\Throwable $e) {
+            if ($isAjax) return $this->json(['error' => 'Impossible de sauvegarder le fichier : ' . $e->getMessage()], 500);
+            throw $e;
+        }
 
         $photo = new Photos();
         $photo->setPhotoUrl($filename)
@@ -128,24 +136,29 @@ final class ProductController extends AbstractController
         }
 
         try {
-            $pel = new PelJpeg($uploadsDir.'/'.$filename);
-            $exif = $pel->getExif();
-            if ($exif instanceof PelExif) {
-                $tiff = $exif->getTiff();
-                $subIfd = $tiff->getSubIfd();
-                $date = $subIfd->getDateTimeOriginal();
-                $photo->setDatePrise($date ? new \DateTimeImmutable($date->format('Y-m-d H:i:s')) : new \DateTimeImmutable());
-                $gps = $tiff->getGps();
-                $photo->setLocalisation($gps ? $gps->getLatitude().', '.$gps->getLongitude() : 'Non renseignée');
+            $exifData = @exif_read_data($uploadsDir . '/' . $filename);
+            if ($exifData) {
+                $datePrise = $exifData['DateTimeOriginal'] ?? $exifData['DateTime'] ?? null;
+                $photo->setDatePrise($datePrise ? new \DateTimeImmutable($datePrise) : new \DateTimeImmutable());
+
+                $lat = $this->exifGpsToDecimal($exifData['GPSLatitude'] ?? null, $exifData['GPSLatitudeRef'] ?? null);
+                $lon = $this->exifGpsToDecimal($exifData['GPSLongitude'] ?? null, $exifData['GPSLongitudeRef'] ?? null);
+                $photo->setLocalisation($lat && $lon ? "$lat, $lon" : 'Non renseignée');
             } else {
                 $photo->setDatePrise(new \DateTimeImmutable())->setLocalisation('Non renseignée');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable) {
             $photo->setDatePrise(new \DateTimeImmutable())->setLocalisation('Non renseignée');
         }
 
         $em->persist($photo);
-        $em->flush();
+        try {
+            $em->flush();
+        } catch (\Throwable $e) {
+            if ($isAjax) return $this->json(['error' => 'Erreur base de données : ' . $e->getMessage()], 500);
+            throw $e;
+        }
+        if ($isAjax) return $this->json(['success' => true]);
         $this->addFlash('success', 'Photo ajoutée avec succès !');
         return $this->redirectToRoute('app_welcome');
     }
@@ -297,6 +310,33 @@ final class ProductController extends AbstractController
         ]);
     }
 
+    #[Route('/api/my-notifications', name: 'api_my_notifications', methods: ['GET'])]
+    public function myNotifications(EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $notifs = $em->getRepository(Notification::class)->findBy(
+            ['recipient' => $user, 'isRead' => false],
+            ['id' => 'DESC']
+        );
+
+        return $this->json(array_map(fn($n) => [
+            'id'      => $n->getId(),
+            'message' => $n->getMessage(),
+        ], $notifs));
+    }
+
+    #[Route('/api/notifications/{id}/read', name: 'api_notification_mark_read', methods: ['POST'])]
+    public function markNotificationRead(Notification $notification, EntityManagerInterface $em): JsonResponse
+    {
+        $notification->setIsRead(true);
+        $em->flush();
+        return $this->json(['status' => 'ok']);
+    }
+
     #[Route('/theme/request/ajax', name: 'theme_request_ajax', methods:['POST'])]
     public function requestThemeAjax(Request $request, EntityManagerInterface $em): JsonResponse
     {
@@ -325,5 +365,16 @@ final class ProductController extends AbstractController
         $em->flush();
 
         return $this->json(['success' => true, 'message' => 'Votre demande de thème a été envoyée !']);
+    }
+
+    private function exifGpsToDecimal(?array $gps, ?string $ref): ?float
+    {
+        if (!$gps || count($gps) < 3) return null;
+        $frac = function (string $v): float {
+            [$n, $d] = explode('/', $v . '/1');
+            return (float)$d > 0 ? (float)$n / (float)$d : 0.0;
+        };
+        $decimal = $frac($gps[0]) + $frac($gps[1]) / 60 + $frac($gps[2]) / 3600;
+        return ($ref === 'S' || $ref === 'W') ? -$decimal : $decimal;
     }
 }

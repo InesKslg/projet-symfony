@@ -3,6 +3,9 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Themes;
+use App\Entity\Notification;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
@@ -15,14 +18,18 @@ class ThemesCrudController extends AbstractCrudController
         return Themes::class;
     }
 
-    /*
-    public function configureFields(string $pageName): iterable
+    public function persistEntity(EntityManagerInterface $em, mixed $entityInstance): void
     {
-        return [
-            IdField::new('id'),
-            TextField::new('title'),
-            TextEditorField::new('description'),
-        ];
+        parent::persistEntity($em, $entityInstance);
+
+        $users = $em->getRepository(User::class)->findAll();
+        foreach ($users as $user) {
+            $notif = new Notification();
+            $notif->setRecipient($user);
+            $notif->setMessage("Nouveau thème disponible : « {$entityInstance->getNom()} » !");
+            $notif->setIsRead(false);
+            $em->persist($notif);
+        }
+        $em->flush();
     }
-    */
 }

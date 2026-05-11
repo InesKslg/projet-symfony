@@ -19,22 +19,22 @@ class HomeController extends AbstractController
         // Récupère tous les thèmes
         $allThemes = $themesRepository->findAll();
 
-        // Tri par date du dernier ajout d'une photo associée (plus récent en premier)
+        // Trie par date de la dernière photo associée (plus récent en premier)
         usort($allThemes, function($a, $b) {
-            $lastPhotoA = $a->getPhotos()->last();
-            $lastPhotoB = $b->getPhotos()->last();
-            $dateA = $lastPhotoA ? $lastPhotoA->getDateAdded()->getTimestamp() : 0;
-            $dateB = $lastPhotoB ? $lastPhotoB->getDateAdded()->getTimestamp() : 0;
+            $lastA = $a->getPhotos()->last();
+            $lastB = $b->getPhotos()->last();
+            $dateA = $lastA ? $lastA->getDateAdded()->getTimestamp() : 0;
+            $dateB = $lastB ? $lastB->getDateAdded()->getTimestamp() : 0;
             return $dateB <=> $dateA;
         });
 
-        // Prends les 3 thèmes les plus récents
-        $recentThemes = array_slice($allThemes, 0, 3);
+        // 4 thèmes les plus récents pour les pills
+        $recentThemes = array_slice($allThemes, 0, 4);
 
-        // Photos publiques à afficher
+        // Photos publiques à afficher dans la galerie
         $allPublicPhotos = $photosRepository->findBy(['public' => true], ['date_added' => 'DESC']);
 
-        // Tableau pour le Twig : photo + themeId (premier thème si existe)
+        // Tableau pour Twig : photo + themeId (premier thème si existant)
         $defaultPhotos = [];
         foreach ($allPublicPhotos as $photo) {
             $themeId = $photo->getThemes()->first() ? $photo->getThemes()->first()->getId() : null;
@@ -45,9 +45,9 @@ class HomeController extends AbstractController
         }
 
         return $this->render('home/index.html.twig', [
-            'recentThemes' => $recentThemes,
+            'recentThemes'  => $recentThemes,
+            'allThemesJson' => json_encode(array_map(fn($t) => ['id' => (string)$t->getId(), 'nom' => $t->getNom()], $allThemes)),
             'defaultPhotos' => $defaultPhotos,
-            'firstTheme' => $recentThemes[0] ?? null,
         ]);
     }
 }

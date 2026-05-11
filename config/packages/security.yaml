@@ -13,6 +13,12 @@ security:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
+    api:
+      pattern: ^/api
+      stateless: true
+      provider: app_user_provider
+      jwt: ~
+
     main:
       lazy: true
       provider: app_user_provider
@@ -23,13 +29,17 @@ security:
         check_path: app_login
         default_target_path: app_welcome
         always_use_default_target_path: true
-        
 
       logout:
         path: app_logout
-        target: /   # page publique après déconnexion
+        target: /
 
   access_control:
+    - { path: ^/api/login, roles: PUBLIC_ACCESS }
+    - { path: ^/api/register, roles: PUBLIC_ACCESS }
+    - { path: ^/api/photos, roles: PUBLIC_ACCESS, methods: [GET] }
+    - { path: ^/api/themes, roles: PUBLIC_ACCESS, methods: [GET] }
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
     - { path: ^/welcome, roles: ROLE_USER }

@@ -29,10 +29,7 @@ class Photos
 
     #[ORM\Column(length: 255)]
     #[Groups(['photo:read', 'photo:write'])]
-    #[Assert\Length(
-        max: 6,
-        maxMessage: "Le nom de la photo ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(max: 255)]
     private ?string $description = null;
 
     #[ORM\Column(type: "datetime_immutable", nullable: true)]
