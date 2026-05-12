@@ -208,22 +208,54 @@ final class ProductController extends AbstractController
         $photoIds = $request->request->all('photo_ids');
 
         if (empty($photoIds)) {
+            if ($request->headers->has('X-Fetch-Request')) return $this->json(['error' => 'Aucune photo sélectionnée'], 400);
             $this->addFlash('error', 'Veuillez sélectionner au moins une photo.');
             return $this->redirectToRoute('app_welcome');
         }
 
         foreach ($photoIds as $id) {
             $photo = $em->getRepository(Photos::class)->find($id);
-            if ($photo) {
-                $album->addPhoto($photo);
-            }
+            if ($photo) $album->addPhoto($photo);
         }
 
         $em->persist($album);
         $em->flush();
 
-        $this->addFlash('success', 'Photos ajoutées à l’album !');
+        if ($request->headers->has('X-Fetch-Request')) return $this->json(['success' => true]);
+        $this->addFlash('success', 'Photos ajoutées à l\'album !');
         return $this->redirectToRoute('app_welcome');
+    }
+
+    #[Route('/album/quick-create', name: 'app_album_quick_create', methods: ['POST'])]
+    public function quickCreateAlbum(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+        $categorie = trim($request->request->get('categorie', ''));
+        if ($categorie === '') {
+            return $this->json(['error' => 'Le nom est requis'], 400);
+        }
+        $album = new Album();
+        $album->setCategorie($categorie)->setUser($user);
+        $em->persist($album);
+        $em->flush();
+        return $this->json(['success' => true, 'albumId' => $album->getId(), 'categorie' => $album->getCategorie()]);
+    }
+
+    #[Route('/photos/bulk-delete', name: 'app_photos_bulk_delete', methods: ['POST'])]
+    public function bulkDelete(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true) ?? [];
+        $ids  = $data['photo_ids'] ?? [];
+        foreach ($ids as $id) {
+            $photo = $em->getRepository(Photos::class)->find($id);
+            if ($photo && $photo->getUserPhoto() === $user) {
+                foreach ($photo->getThemes() as $theme) $photo->removeTheme($theme);
+                $em->remove($photo);
+            }
+        }
+        $em->flush();
+        return $this->json(['success' => true]);
     }
 
     #[Route('/album/{id}/edit', name: 'app_edit_album', methods: ['POST'])]

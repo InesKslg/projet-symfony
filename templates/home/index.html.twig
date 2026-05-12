@@ -112,12 +112,15 @@ themeButtons.forEach(btn=>{
 
 const allThemesData = {{ allThemesJson|raw }}
 
+function normalize(s){
+    return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+}
+
 function searchTheme(){
-    const query = searchInput.value.trim().toLowerCase()
+    const query = normalize(searchInput.value.trim())
     if(!query){ searchMessage.style.display="none"; return }
 
-    // Cherche d'abord dans les pills visibles
-    const pillMatch = themeButtons.find(btn=>btn.textContent.trim().toLowerCase().includes(query))
+    const pillMatch = themeButtons.find(btn=>normalize(btn.textContent.trim()).includes(query))
     if(pillMatch){
         themeButtons.forEach(b=>b.classList.remove("active"))
         pillMatch.classList.add("active")
@@ -128,8 +131,7 @@ function searchTheme(){
         return
     }
 
-    // Sinon cherche dans tous les thèmes (y compris ceux sans pill)
-    const themeMatch = allThemesData.find(t=>t.nom.toLowerCase().includes(query))
+    const themeMatch = allThemesData.find(t=>normalize(t.nom).includes(query))
     if(themeMatch){
         themeButtons.forEach(b=>b.classList.remove("active"))
         currentTheme = themeMatch.id

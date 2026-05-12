@@ -37,7 +37,7 @@ security:
   access_control:
     - { path: ^/api/login, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
-    - { path: ^/api/photos, roles: PUBLIC_ACCESS, methods: [GET] }
+    - { path: ^/api/public-photos, roles: PUBLIC_ACCESS, methods: [GET] }
     - { path: ^/api/themes, roles: PUBLIC_ACCESS, methods: [GET] }
     - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/login, roles: PUBLIC_ACCESS }

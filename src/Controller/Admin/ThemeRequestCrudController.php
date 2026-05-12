@@ -79,7 +79,7 @@ class ThemeRequestCrudController extends AbstractCrudController
 
         $em->flush();
 
-        $this->addFlash('success', 'Demande validée. Une notification sera affichée à l’utilisateur.');
+        $this->addFlash('success', 'Demande validée. Une notification sera affichée à l\'utilisateur.');
 
         // Redirection vers la liste des demandes
         $url = $this->container->get(AdminUrlGenerator::class)

@@ -29,6 +29,33 @@ final class ApiProductController extends AbstractController
         ], $themes));
     }
 
+    // ─── Photos publiques ────────────────────────────────────────────────────────
+
+    #[Route('/public-photos', name: 'api_public_photos', methods: ['GET'])]
+    public function publicPhotos(EntityManagerInterface $em): JsonResponse
+    {
+        $photos = $em->getRepository(Photos::class)->findBy(
+            ['public' => true],
+            ['date_added' => 'DESC']
+        );
+
+        return $this->json(['member' => array_map(fn($p) => [
+            'id'          => $p->getId(),
+            'photo_url'   => $p->getPhotoUrl(),
+            'description' => $p->getDescription(),
+            'localisation'=> $p->getLocalisation(),
+            'date_prise'  => $p->getDatePrise()?->format('Y-m-d'),
+            'public'      => $p->isPublic(),
+            'themes'      => array_map(fn($t) => [
+                'id'  => $t->getId(),
+                'nom' => $t->getNom(),
+            ], $p->getThemes()->toArray()),
+            'user_photo'  => $p->getUserPhoto() ? [
+                'user_identifier' => $p->getUserPhoto()->getUserIdentifier(),
+            ] : null,
+        ], $photos)]);
+    }
+
     // ─── Photos ─────────────────────────────────────────────────────────────────
 
     #[Route('/photo/upload', name: 'api_photo_upload', methods: ['POST'])]
@@ -90,6 +117,21 @@ final class ApiProductController extends AbstractController
             'success'  => true,
             'photoUrl' => $photo->getPhotoUrl(),
         ], Response::HTTP_CREATED);
+    }
+
+    #[Route('/photos/bulk-delete', name: 'api_photos_bulk_delete', methods: ['POST'])]
+    public function bulkDeletePhotos(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+        $ids  = json_decode($request->getContent(), true)['photo_ids'] ?? [];
+        foreach ($ids as $id) {
+            $photo = $em->getRepository(Photos::class)->find($id);
+            if ($photo && $photo->getUserPhoto() === $user) {
+                $em->remove($photo);
+            }
+        }
+        $em->flush();
+        return $this->json(['success' => true]);
     }
 
     #[Route('/photo/{id}', name: 'api_photo_delete', methods: ['DELETE'])]

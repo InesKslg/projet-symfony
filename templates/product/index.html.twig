@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+﻿{% extends 'base.html.twig' %}
 {% block title %}Mes Photos — PIXARA{% endblock %}
 
 {% block body %}
@@ -35,7 +35,6 @@
             Post
         </button>
         <button id="requestThemeBtn" class="hbtn">Thème</button>
-        <button id="addAlbumBtn" class="hbtn">Album</button>
         <a href="{{ path('app_logout') }}" class="hbtn hbtn-danger">Déconnexion</a>
     </div>
     {% else %}
@@ -51,14 +50,20 @@
 
 {# ===== PHOTOS PRIVÉES ===== #}
 <div id="photosTab" class="tab-content">
-    <div class="tab-search-wrap">
-        <div style="position:relative;max-width:480px;width:100%">
-            <div class="tab-search-bar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="searchPrivate" placeholder="Rechercher un thème…" oninput="filterTab('photosTab', this.value, 'msgPrivate')">
+    <div class="tab-toolbar">
+        <div class="tab-search-wrap">
+            <div style="position:relative;max-width:480px;width:100%">
+                <div class="tab-search-bar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchPrivate" placeholder="Rechercher un thème…" oninput="filterTab('photosTab', this.value, 'msgPrivate')">
+                </div>
+                <p id="msgPrivate" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
             </div>
-            <p id="msgPrivate" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
         </div>
+        <button class="select-toggle-btn" data-tab="photosTab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="5" height="5" rx="1"/><rect x="3" y="13" width="5" height="5" rx="1"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="15.5" x2="21" y2="15.5"/></svg>
+            Sélectionner
+        </button>
     </div>
     <div class="themes-row">
         <button class="theme-pill active" data-theme="all">Tous</button>
@@ -68,8 +73,9 @@
     </div>
     <div class="gallery">
         {% for photo in privatePhotos %}
-        <div class="media-item" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="{{ photo.public ? 'true' : 'false' }}">
+        <div class="media-item" data-photo-id="{{ photo.id }}" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="{{ photo.public ? 'true' : 'false' }}">
             <div class="mi-img">
+                <label class="sel-checkbox-wrap"><input type="checkbox" class="sel-checkbox" value="{{ photo.id }}"></label>
                 <img src="/uploads/photos/{{ photo.photoUrl }}" alt="{{ photo.description }}" loading="lazy">
                 <div class="mi-hover">
                     <button class="toggle-info mi-view-btn">Voir détails</button>
@@ -97,14 +103,20 @@
 
 {# ===== PHOTOS PUBLIQUES ===== #}
 <div id="publicPhotosTab" class="tab-content" style="display:none;">
-    <div class="tab-search-wrap">
-        <div style="position:relative;max-width:480px;width:100%">
-            <div class="tab-search-bar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="searchPublic" placeholder="Rechercher un thème…" oninput="filterTab('publicPhotosTab', this.value, 'msgPublic')">
+    <div class="tab-toolbar">
+        <div class="tab-search-wrap">
+            <div style="position:relative;max-width:480px;width:100%">
+                <div class="tab-search-bar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchPublic" placeholder="Rechercher un thème…" oninput="filterTab('publicPhotosTab', this.value, 'msgPublic')">
+                </div>
+                <p id="msgPublic" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
             </div>
-            <p id="msgPublic" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
         </div>
+        <button class="select-toggle-btn" data-tab="publicPhotosTab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="5" height="5" rx="1"/><rect x="3" y="13" width="5" height="5" rx="1"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="15.5" x2="21" y2="15.5"/></svg>
+            Sélectionner
+        </button>
     </div>
     <div class="themes-row">
         <button class="theme-pill active" data-theme="all">Tous</button>
@@ -114,8 +126,9 @@
     </div>
     <div class="gallery">
         {% for photo in publicPhotos %}
-        <div class="media-item" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="true">
+        <div class="media-item" data-photo-id="{{ photo.id }}" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="true">
             <div class="mi-img">
+                <label class="sel-checkbox-wrap"><input type="checkbox" class="sel-checkbox" value="{{ photo.id }}"></label>
                 <img src="/uploads/photos/{{ photo.photoUrl }}" alt="{{ photo.description }}" loading="lazy">
                 <div class="mi-hover">
                     <button class="toggle-info mi-view-btn">Voir détails</button>
@@ -144,30 +157,37 @@
 
 {# ===== ALBUMS ===== #}
 <div id="albumsTab" class="tab-content" style="display:none;">
-    {% if albums is empty %}
-        <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-ico"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
-            <p>Aucun album pour l'instant</p>
-        </div>
-    {% else %}
-        <div class="albums-grid">
-            {% for album in albums %}
-                <div class="album-card" data-id="{{ album.id }}">
-                    <div class="album-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
-                    </div>
-                    <p class="album-name">{{ album.categorie }}</p>
-                    <div class="album-actions">
-                        <a href="{{ path('app_view_album', {'id': album.id}) }}" class="abtn-sm" style="text-align:center;text-decoration:none;display:block">Voir photos</a>
-                        <button class="manage-album-btn abtn-sm abtn-outline" data-album-id="{{ album.id }}" data-album-name="{{ album.categorie }}">Gérer</button>
-                        <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
-                            <button type="submit" class="abtn-sm abtn-danger">Supprimer</button>
-                        </form>
-                    </div>
+    <div class="albums-grid">
+        <div class="album-card album-new-card" id="albumNewCard">
+            <div id="albumNewIdle" class="album-new-idle">
+                <div class="album-new-plus">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
-            {% endfor %}
+                <span>Nouvel album</span>
+            </div>
+            <div id="albumNewForm" class="album-new-form" style="display:none">
+                <input type="text" id="albumNewInput" class="minput" placeholder="Nom (max 20 car.)" maxlength="20">
+                <p id="albumNewError" style="color:#EF4444;font-size:.78rem;margin-top:4px;display:none"></p>
+                <button id="albumNewSubmit" class="mbtn" style="font-size:.82rem;padding:9px;margin-top:8px">Créer</button>
+                <button id="albumNewCancel" class="abtn-sm" style="margin-top:5px;width:100%">Annuler</button>
+            </div>
         </div>
-    {% endif %}
+        {% for album in albums %}
+            <div class="album-card" data-id="{{ album.id }}" id="album-card-{{ album.id }}">
+                <div class="album-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+                </div>
+                <p class="album-name">{{ album.categorie }}</p>
+                <div class="album-actions">
+                    <a href="{{ path('app_view_album', {'id': album.id}) }}" class="abtn-sm" style="text-align:center;text-decoration:none;display:block">Voir photos</a>
+                    <button class="manage-album-btn abtn-sm abtn-outline" data-album-id="{{ album.id }}" data-album-name="{{ album.categorie }}">Gérer</button>
+                    <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
+                        <button type="submit" class="abtn-sm abtn-danger">Supprimer</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 
 {# ===== MODALS ===== #}
@@ -195,16 +215,34 @@
     </div>
 </div>
 
-<div id="addAlbumModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="closeAlbumModal">✕</button>
-        <h3 class="modal-title">Nouvel album</h3>
-        <div class="mform">
-            {{ form_start(albumForm) }}
-                {{ form_row(albumForm.categorie, { 'label': 'Titre / Catégorie', 'attr': {'class': 'minput'} }) }}
-                <button type="submit" class="mbtn">Créer l'album</button>
-            {{ form_end(albumForm) }}
+{# ===== FLOATING SELECTION BAR ===== #}
+<div class="sel-float-bar" id="selFloatBar">
+    <div class="sel-float-top">
+        <div class="sel-float-info">
+            <span class="sel-float-count" id="selFloatCount">0</span>
+            <span class="sel-float-label">photo(s) sélectionnée(s)</span>
         </div>
+        <div class="sel-float-actions">
+            <button class="sel-float-album-toggle" id="selFloatAlbumToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+                Ajouter à un album
+            </button>
+            <button class="sel-float-delete" id="selFloatDelete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Supprimer
+            </button>
+            <button class="sel-float-cancel" id="selFloatCancel">✕</button>
+        </div>
+    </div>
+    <div class="sel-float-album-row" id="selFloatAlbumRow">
+        <select id="selFloatAlbumSelect">
+            <option value="">— Choisir un album —</option>
+            {% for album in albums %}<option value="{{ album.id }}">{{ album.categorie }}</option>{% endfor %}
+        </select>
+        <button id="selFloatAlbumConfirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Confirmer
+        </button>
     </div>
 </div>
 
@@ -279,12 +317,18 @@
 
 {% block javascripts %}
 <script>
+const allThemeNames = [{% for theme in themes %}"{{ theme.nom }}",{% endfor %}];
+
+function normalize(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 function filterTab(tabId, query, msgId) {
-    const q = query.trim().toLowerCase();
+    const q = normalize(query);
     const items = document.querySelectorAll(`#${tabId} .gallery .media-item`);
     let found = false;
     items.forEach(item => {
-        const themes = (item.dataset.theme || '').split(',').map(t => t.trim()).filter(Boolean);
+        const themes = (item.dataset.theme || '').split(',').map(t => normalize(t)).filter(Boolean);
         const visible = !q || themes.some(t => t.includes(q));
         item.style.display = visible ? '' : 'none';
         if (visible) found = true;
@@ -292,7 +336,8 @@ function filterTab(tabId, query, msgId) {
     document.querySelectorAll(`#${tabId} .theme-pill`).forEach(b => b.classList.remove('active'));
     document.querySelector(`#${tabId} .theme-pill[data-theme="all"]`)?.classList.add('active');
     if (msgId) {
-        document.getElementById(msgId).style.display = (q && !found) ? 'block' : 'none';
+        const themeKnown = q && allThemeNames.some(n => normalize(n).includes(q));
+        document.getElementById(msgId).style.display = (q && !found && !themeKnown) ? 'block' : 'none';
     }
 }
 
@@ -311,12 +356,63 @@ function dismissNotif(btn, id) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    /* MULTI-SELECTION STATE */
+    const selectState = {
+        photosTab: { mode: false, ids: new Set() },
+        publicPhotosTab: { mode: false, ids: new Set() }
+    };
+    let currentSelectTab = null;
+
+    function toggleSelectItem(tabId, item) {
+        const id = item.dataset.photoId;
+        if (!id) return;
+        const state = selectState[tabId];
+        const cb = item.querySelector('.sel-checkbox');
+        if (state.ids.has(id)) {
+            state.ids.delete(id);
+            item.classList.remove('selected');
+            if (cb) cb.checked = false;
+        } else {
+            state.ids.add(id);
+            item.classList.add('selected');
+            if (cb) cb.checked = true;
+        }
+        document.getElementById('selFloatCount').textContent = state.ids.size;
+    }
+
+    function enterSelectMode(tabId) {
+        currentSelectTab = tabId;
+        selectState[tabId].mode = true;
+        selectState[tabId].ids.clear();
+        document.querySelectorAll(`#${tabId} .media-item`).forEach(i => i.classList.remove('selected'));
+        document.querySelectorAll(`#${tabId} .sel-checkbox`).forEach(cb => cb.checked = false);
+        document.getElementById(tabId).classList.add('select-mode');
+        document.getElementById('selFloatCount').textContent = '0';
+        document.getElementById('selFloatAlbumRow').style.display = 'none';
+        document.getElementById('selFloatBar').style.display = 'flex';
+        document.querySelector(`.select-toggle-btn[data-tab="${tabId}"]`)?.classList.add('active');
+    }
+
+    function exitSelectMode(tabId) {
+        currentSelectTab = null;
+        selectState[tabId].mode = false;
+        selectState[tabId].ids.clear();
+        document.querySelectorAll(`#${tabId} .media-item`).forEach(i => i.classList.remove('selected'));
+        document.querySelectorAll(`#${tabId} .sel-checkbox`).forEach(cb => cb.checked = false);
+        document.getElementById(tabId).classList.remove('select-mode');
+        document.getElementById('selFloatBar').style.display = 'none';
+        document.getElementById('selFloatAlbumRow').style.display = 'none';
+        document.querySelector(`.select-toggle-btn[data-tab="${tabId}"]`)?.classList.remove('active');
+    }
+
     /* PHOTO DETAILS */
     document.querySelectorAll('.toggle-info').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const parent = btn.closest('.media-item');
             if (!parent) return;
+            const tabId = btn.closest('.tab-content')?.id;
+            if (tabId && selectState[tabId]?.mode) { toggleSelectItem(tabId, parent); return; }
 
             const description = parent.querySelector('.photo-desc')?.innerText || '';
             const formActionEdit = parent.querySelector('form[action*="edit"]')?.action || '';
@@ -455,19 +551,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* MODALS OUVERTURE */
     const addMediaModal = document.getElementById('addMediaModal');
-    const addAlbumModal = document.getElementById('addAlbumModal');
     const themeRequestModal = document.getElementById('themeRequestModal');
 
     document.getElementById('addMediaBtn')?.addEventListener('click', () => addMediaModal.style.display = 'flex');
-    document.getElementById('addAlbumBtn')?.addEventListener('click', () => addAlbumModal.style.display = 'flex');
     document.getElementById('requestThemeBtn')?.addEventListener('click', () => themeRequestModal.style.display = 'flex');
     document.getElementById('closeModal')?.addEventListener('click', () => addMediaModal.style.display = 'none');
-    document.getElementById('closeAlbumModal')?.addEventListener('click', () => addAlbumModal.style.display = 'none');
     document.getElementById('closeThemeModal')?.addEventListener('click', () => themeRequestModal.style.display = 'none');
 
     /* TABS */
     document.querySelectorAll('.tab-btn').forEach(tab => {
         tab.addEventListener('click', () => {
+            exitSelectMode('photosTab');
+            exitSelectMode('publicPhotosTab');
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             const target = tab.dataset.tab;
@@ -543,6 +638,133 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    /* SELECTION HANDLERS */
+    document.querySelectorAll('.select-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            if (selectState[tabId].mode) exitSelectMode(tabId); else enterSelectMode(tabId);
+        });
+    });
+
+    document.querySelectorAll('#photosTab .media-item, #publicPhotosTab .media-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const tabId = item.closest('.tab-content')?.id;
+            if (tabId && selectState[tabId]?.mode) toggleSelectItem(tabId, item);
+        });
+    });
+
+    document.getElementById('selFloatCancel')?.addEventListener('click', () => {
+        if (currentSelectTab) exitSelectMode(currentSelectTab);
+    });
+
+    document.getElementById('selFloatAlbumToggle')?.addEventListener('click', () => {
+        const row = document.getElementById('selFloatAlbumRow');
+        row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    document.getElementById('selFloatDelete')?.addEventListener('click', async () => {
+        if (!currentSelectTab) return;
+        const ids = [...selectState[currentSelectTab].ids];
+        if (!ids.length) return;
+        if (!confirm(`Supprimer ${ids.length} photo(s) ?`)) return;
+        const btn = document.getElementById('selFloatDelete');
+        btn.disabled = true;
+        try {
+            const resp = await fetch('/photos/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photo_ids: ids.map(Number) })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                const tab = currentSelectTab;
+                ids.forEach(id => document.querySelector(`#${tab} .media-item[data-photo-id="${id}"]`)?.remove());
+                exitSelectMode(tab);
+            }
+        } catch { alert('Erreur réseau.'); }
+        finally { btn.disabled = false; }
+    });
+
+    document.getElementById('selFloatAlbumConfirm')?.addEventListener('click', async () => {
+        if (!currentSelectTab) return;
+        const ids = [...selectState[currentSelectTab].ids];
+        const albumId = document.getElementById('selFloatAlbumSelect').value;
+        if (!ids.length) { alert('Sélectionnez des photos.'); return; }
+        if (!albumId) { alert('Choisissez un album.'); return; }
+        const btn = document.getElementById('selFloatAlbumConfirm');
+        btn.disabled = true;
+        try {
+            const form = new FormData();
+            ids.forEach(id => form.append('photo_ids[]', id));
+            const resp = await fetch(`/album/${albumId}/add-photo`, {
+                method: 'POST', headers: { 'X-Fetch-Request': '1' }, body: form
+            });
+            if (resp.ok) { exitSelectMode(currentSelectTab); window.location.reload(); }
+        } catch { alert('Erreur réseau.'); }
+        finally { btn.disabled = false; }
+    });
+
+    /* CREATION ALBUM INLINE */
+    const albumNewCard  = document.getElementById('albumNewCard');
+    const albumNewIdle  = document.getElementById('albumNewIdle');
+    const albumNewForm  = document.getElementById('albumNewForm');
+    const albumNewInput = document.getElementById('albumNewInput');
+    const albumNewError = document.getElementById('albumNewError');
+
+    function showAlbumCreate() {
+        albumNewIdle.style.display = 'none';
+        albumNewForm.style.display = 'flex';
+        albumNewInput.value = '';
+        albumNewError.style.display = 'none';
+        albumNewInput.focus();
+    }
+    function hideAlbumCreate() {
+        albumNewForm.style.display = 'none';
+        albumNewIdle.style.display = 'flex';
+    }
+
+    albumNewIdle?.addEventListener('click', showAlbumCreate);
+    document.getElementById('albumNewCancel')?.addEventListener('click', hideAlbumCreate);
+
+    async function submitAlbumCreate() {
+        const name = albumNewInput.value.trim();
+        if (!name) { albumNewError.textContent = 'Nom requis.'; albumNewError.style.display = 'block'; return; }
+        albumNewError.style.display = 'none';
+        const btn = document.getElementById('albumNewSubmit');
+        btn.disabled = true; btn.textContent = 'Création…';
+        try {
+            const form = new FormData();
+            form.append('categorie', name);
+            const resp = await fetch('/album/quick-create', { method: 'POST', body: form });
+            const data = await resp.json();
+            if (data.success) {
+                const grid = document.querySelector('.albums-grid');
+                const card = document.createElement('div');
+                card.className = 'album-card';
+                card.id = 'album-card-' + data.albumId;
+                card.innerHTML = `
+                    <div class="album-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div>
+                    <p class="album-name">${data.categorie}</p>
+                    <div class="album-actions">
+                        <a href="/album/${data.albumId}/view" class="abtn-sm" style="text-align:center;text-decoration:none;display:block">Voir photos</a>
+                        <button class="manage-album-btn abtn-sm abtn-outline" data-album-id="${data.albumId}" data-album-name="${data.categorie}">Gérer</button>
+                    </div>`;
+                albumNewCard.insertAdjacentElement('afterend', card);
+                const opt1 = new Option(data.categorie, data.albumId);
+                const opt2 = new Option(data.categorie, data.albumId);
+                document.getElementById('selFloatAlbumSelect')?.appendChild(opt1);
+                hideAlbumCreate();
+            } else {
+                albumNewError.textContent = data.error || 'Erreur.';
+                albumNewError.style.display = 'block';
+            }
+        } catch { albumNewError.textContent = 'Erreur réseau.'; albumNewError.style.display = 'block'; }
+        finally { btn.disabled = false; btn.textContent = 'Créer'; }
+    }
+
+    document.getElementById('albumNewSubmit')?.addEventListener('click', submitAlbumCreate);
+    albumNewInput?.addEventListener('keydown', e => { if (e.key === 'Enter') submitAlbumCreate(); });
+
     /* DEMANDE DE THEME AJAX */
     document.getElementById('themeRequestForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -604,8 +826,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .tab-btn:hover{border-color:#7C3AED;color:#7C3AED}
 .tab-btn.active{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border-color:transparent;font-weight:600}
 
-/* SEARCH DANS TABS */
-.tab-search-wrap{padding:16px 24px 4px;display:flex;justify-content:center}
+/* TOOLBAR + SEARCH */
+.tab-toolbar{display:flex;align-items:center;padding:16px 24px 4px;gap:10px}
+.tab-search-wrap{flex:1;display:flex;justify-content:center}
 .tab-search-bar{display:flex;align-items:center;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:50px;padding:0 16px;max-width:480px;width:100%;transition:border-color .2s,box-shadow .2s}
 .tab-search-bar:focus-within{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
 .tab-search-bar svg{width:15px;height:15px;color:#94A3B8;flex-shrink:0}
@@ -681,6 +904,51 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .album-photos-list{display:flex;flex-wrap:wrap;gap:10px;max-height:260px;overflow-y:auto;padding:4px 0}
 .album-infos{background:#F8FAFC;border-radius:10px;padding:12px;font-size:.85rem;color:#374151;line-height:1.7;margin-bottom:14px}
 .album-infos strong{color:#0F172A}
+
+/* SELECTION MODE */
+.select-toggle-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px solid #7C3AED;background:transparent;color:#7C3AED;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.select-toggle-btn svg{width:14px;height:14px}
+.select-toggle-btn:hover,.select-toggle-btn.active{background:#7C3AED;color:#fff}
+.sel-checkbox-wrap{position:absolute;top:8px;left:8px;z-index:10;display:none;width:22px;height:22px;align-items:center;justify-content:center;background:rgba(255,255,255,.9);border-radius:6px;cursor:pointer;padding:2px}
+.sel-checkbox{width:16px;height:16px;cursor:pointer;accent-color:#7C3AED;margin:0}
+.select-mode .sel-checkbox-wrap{display:flex}
+.media-item.selected{outline:3px solid #7C3AED;outline-offset:-2px}
+.media-item.selected .sel-checkbox-wrap{display:flex}
+
+/* FLOATING SELECTION BAR */
+.sel-float-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:14px 28px 22px;display:none;flex-direction:column;gap:12px;z-index:3000;border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -10px 40px rgba(0,0,0,.3);animation:slideUpBar .22s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUpBar{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.sel-float-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sel-float-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.sel-float-count{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;font-weight:800;font-size:1rem;padding:4px 13px;border-radius:50px;min-width:32px;text-align:center;flex-shrink:0}
+.sel-float-label{color:rgba(255,255,255,.55);font-size:.83rem;font-weight:500}
+.sel-float-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sel-float-album-toggle{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:rgba(124,58,237,.2);border:1.5px solid rgba(124,58,237,.5);color:#C4B5FD;border-radius:12px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.sel-float-album-toggle:hover{background:rgba(124,58,237,.4);color:#fff}
+.sel-float-album-toggle svg{width:15px;height:15px}
+.sel-float-delete{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:rgba(239,68,68,.18);border:1.5px solid rgba(239,68,68,.4);color:#FCA5A5;border-radius:12px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.sel-float-delete:hover{background:rgba(239,68,68,.38);color:#fff}
+.sel-float-delete svg{width:14px;height:14px}
+.sel-float-cancel{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;font-family:inherit}
+.sel-float-cancel:hover{background:rgba(255,255,255,.18);color:#fff}
+.sel-float-album-row{display:none;gap:10px;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
+.sel-float-album-row select{flex:1;padding:9px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);color:#fff;border-radius:12px;font-family:inherit;font-size:.85rem;outline:none;cursor:pointer}
+.sel-float-album-row select option{background:#1E293B;color:#fff}
+.sel-float-album-row select:focus{border-color:#7C3AED}
+.sel-float-album-row #selFloatAlbumConfirm{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border:none;border-radius:12px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s;flex-shrink:0}
+.sel-float-album-row #selFloatAlbumConfirm:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(124,58,237,.4)}
+.sel-float-album-row #selFloatAlbumConfirm svg{width:14px;height:14px}
+
+/* ALBUM NEW CARD */
+.album-new-card{border:2px dashed #D1D5DB;background:transparent;box-shadow:none;transition:border-color .25s,background .25s;cursor:pointer;padding:0}
+.album-new-card:hover{border-color:#7C3AED;background:rgba(124,58,237,.04);box-shadow:none;transform:none}
+.album-new-idle{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px 16px;border:none;background:transparent;cursor:pointer;font-family:inherit}
+.album-new-plus{width:52px;height:52px;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(96,165,250,.1));border-radius:14px;display:flex;align-items:center;justify-content:center;transition:all .25s}
+.album-new-card:hover .album-new-plus{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(96,165,250,.18))}
+.album-new-plus svg{width:24px;height:24px;color:#7C3AED}
+.album-new-idle span{font-size:.9rem;font-weight:700;color:#7C3AED}
+.album-new-form{display:flex;flex-direction:column;padding:20px 16px;width:100%}
+.gallery{padding-bottom:90px}
 
 @keyframes mfade{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 
