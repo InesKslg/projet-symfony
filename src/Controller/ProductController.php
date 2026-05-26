@@ -58,6 +58,12 @@ final class ProductController extends AbstractController
         }
 
         $themes = $em->getRepository(Themes::class)->findAll();
+        usort($themes, fn($a, $b) => $b->getPhotos()->count() <=> $a->getPhotos()->count());
+        $topThemes = array_map(fn($t) => [
+            'id'    => $t->getId(),
+            'nom'   => $t->getNom(),
+            'count' => $t->getPhotos()->count(),
+        ], array_slice($themes, 0, 4));
 
         $themeRequest = new ThemeRequest();
         $themeRequestForm = $this->createForm(ThemeRequestType::class, $themeRequest);
@@ -86,6 +92,7 @@ final class ProductController extends AbstractController
             'albums' => $albums,
             'albumForm' => $albumForm->createView(),
             'themes' => $themes,
+            'topThemes' => $topThemes,
             'themeRequestForm' => $themeRequestForm->createView(),
             'notifications' => $notifications,
         ]);
@@ -168,6 +175,15 @@ final class ProductController extends AbstractController
     {
         $photo->setDescription($request->request->get('description'));
         $photo->setPublic($request->request->get('public') ? true : false);
+
+        foreach ($photo->getThemes() as $theme) {
+            $photo->removeTheme($theme);
+        }
+        foreach ($request->request->all('theme_ids') as $themeId) {
+            $theme = $em->getRepository(Themes::class)->find($themeId);
+            if ($theme) $photo->addTheme($theme);
+        }
+
         $em->flush();
 
         if ($request->isXmlHttpRequest()) {

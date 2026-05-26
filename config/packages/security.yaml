@@ -35,6 +35,9 @@ security:
         target: /
 
   access_control:
+    - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+    - { path: ^/api/contexts/, roles: PUBLIC_ACCESS }
+    - { path: ^/api$, roles: PUBLIC_ACCESS }
     - { path: ^/api/login, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
     - { path: ^/api/public-photos, roles: PUBLIC_ACCESS, methods: [GET] }

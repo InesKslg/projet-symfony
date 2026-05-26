@@ -23,9 +23,11 @@ final class ApiProductController extends AbstractController
     public function themes(EntityManagerInterface $em): JsonResponse
     {
         $themes = $em->getRepository(Themes::class)->findAll();
+        usort($themes, fn($a, $b) => $b->getPhotos()->count() <=> $a->getPhotos()->count());
         return $this->json(array_map(fn($t) => [
-            'id'  => $t->getId(),
-            'nom' => $t->getNom(),
+            'id'    => $t->getId(),
+            'nom'   => $t->getNom(),
+            'count' => $t->getPhotos()->count(),
         ], $themes));
     }
 
@@ -155,6 +157,13 @@ final class ApiProductController extends AbstractController
         $data = json_decode($request->getContent(), true) ?? [];
         if (array_key_exists('description', $data)) $photo->setDescription($data['description']);
         if (array_key_exists('public', $data))      $photo->setPublic((bool) $data['public']);
+        if (array_key_exists('theme_ids', $data)) {
+            foreach ($photo->getThemes() as $t) $photo->removeTheme($t);
+            foreach ((array) $data['theme_ids'] as $tid) {
+                $theme = $em->getRepository(Themes::class)->find($tid);
+                if ($theme) $photo->addTheme($theme);
+            }
+        }
         $em->flush();
         return $this->json(['success' => true]);
     }

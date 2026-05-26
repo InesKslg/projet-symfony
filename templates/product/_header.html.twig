@@ -1,0 +1,30 @@
+<header class="app-header">
+    <div class="logo"><span class="logo-dot"></span>PIXARA</div>
+    {% if app.user %}
+    <div class="header-center">
+        <span class="welcome-text">
+            Bienvenue, <strong>{{ app.user.firstName ? app.user.firstName : app.user.email }}</strong>
+        </span>
+    </div>
+    <div class="header-actions">
+        <a href="{{ path('app_home') }}" class="hbtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Galerie
+        </a>
+        <button id="addMediaBtn" class="hbtn hbtn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Post
+        </button>
+        <button id="requestThemeBtn" class="hbtn">Thème</button>
+        <a href="{{ path('app_logout') }}" class="hbtn hbtn-danger">Déconnexion</a>
+    </div>
+    {% else %}
+    <a href="{{ path('app_home') }}" class="hbtn">Accueil</a>
+    {% endif %}
+</header>
+
+<div class="tabs-bar">
+    <button class="tab-btn active" data-tab="photosTab">Photos privées</button>
+    <button class="tab-btn" data-tab="publicPhotosTab">Photos publiques</button>
+    <button class="tab-btn" data-tab="albumsTab">Albums</button>
+</div>

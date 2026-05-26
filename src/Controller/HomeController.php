@@ -16,20 +16,18 @@ class HomeController extends AbstractController
         PhotosRepository $photosRepository
     ): Response {
 
-        // Récupère tous les thèmes
         $allThemes = $themesRepository->findAll();
+        usort($allThemes, fn($a, $b) => $b->getPhotos()->count() <=> $a->getPhotos()->count());
 
-        // Trie par date de la dernière photo associée (plus récent en premier)
-        usort($allThemes, function($a, $b) {
-            $lastA = $a->getPhotos()->last();
-            $lastB = $b->getPhotos()->last();
-            $dateA = $lastA ? $lastA->getDateAdded()->getTimestamp() : 0;
-            $dateB = $lastB ? $lastB->getDateAdded()->getTimestamp() : 0;
-            return $dateB <=> $dateA;
-        });
+        $topThemes = array_map(fn($t) => [
+            'id'  => $t->getId(),
+            'nom' => $t->getNom(),
+        ], array_slice($allThemes, 0, 4));
 
-        // 4 thèmes les plus récents pour les pills
-        $recentThemes = array_slice($allThemes, 0, 4);
+        $otherThemes = array_map(fn($t) => [
+            'id'  => $t->getId(),
+            'nom' => $t->getNom(),
+        ], array_slice($allThemes, 4));
 
         // Photos publiques à afficher dans la galerie
         $allPublicPhotos = $photosRepository->findBy(['public' => true], ['date_added' => 'DESC']);
@@ -45,7 +43,8 @@ class HomeController extends AbstractController
         }
 
         return $this->render('home/index.html.twig', [
-            'recentThemes'  => $recentThemes,
+            'topThemes'     => $topThemes,
+            'otherThemes'   => $otherThemes,
             'allThemesJson' => json_encode(array_map(fn($t) => ['id' => (string)$t->getId(), 'nom' => $t->getNom()], $allThemes)),
             'defaultPhotos' => $defaultPhotos,
         ]);

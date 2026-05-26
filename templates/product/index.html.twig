@@ -3,321 +3,21 @@
 
 {% block body %}
 
-{% if notifications is defined and notifications|length > 0 %}
-<div id="notif-stack">
-    {% for notif in notifications %}
-    <div class="notif-item" data-id="{{ notif.id }}">
-        <div class="notif-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
-        <p class="notif-msg">{{ notif.message }}</p>
-        <button class="notif-close" onclick="dismissNotif(this, {{ notif.id }})">✕</button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+{{ include('product/_notifications.html.twig') }}
+{{ include('product/_header.html.twig') }}
 
-<header class="app-header">
-    <div class="logo"><span class="logo-dot"></span>PIXARA</div>
-    {% if app.user %}
-    <div class="header-center">
-        <span class="welcome-text">
-            Bienvenue, <strong>{{ app.user.firstName ? app.user.firstName : app.user.email }}</strong>
-        </span>
-    </div>
-    <div class="header-actions">
-        <a href="{{ path('app_home') }}" class="hbtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            Galerie
-        </a>
-        <button id="addMediaBtn" class="hbtn hbtn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Post
-        </button>
-        <button id="requestThemeBtn" class="hbtn">Thème</button>
-        <a href="{{ path('app_logout') }}" class="hbtn hbtn-danger">Déconnexion</a>
-    </div>
-    {% else %}
-    <a href="{{ path('app_home') }}" class="hbtn">Accueil</a>
-    {% endif %}
-</header>
+{{ include('product/_tab_private.html.twig') }}
+{{ include('product/_tab_public.html.twig') }}
 
-<div class="tabs-bar">
-    <button class="tab-btn active" data-tab="photosTab">Photos privées</button>
-    <button class="tab-btn" data-tab="publicPhotosTab">Photos publiques</button>
-    <button class="tab-btn" data-tab="albumsTab">Albums</button>
-</div>
-
-{# ===== PHOTOS PRIVÉES ===== #}
-<div id="photosTab" class="tab-content">
-    <div class="tab-toolbar">
-        <div class="tab-search-wrap">
-            <div style="position:relative;max-width:480px;width:100%">
-                <div class="tab-search-bar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="searchPrivate" placeholder="Rechercher un thème…" oninput="filterTab('photosTab', this.value, 'msgPrivate')">
-                </div>
-                <p id="msgPrivate" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
-            </div>
-        </div>
-        <button class="select-toggle-btn" data-tab="photosTab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="5" height="5" rx="1"/><rect x="3" y="13" width="5" height="5" rx="1"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="15.5" x2="21" y2="15.5"/></svg>
-            Sélectionner
-        </button>
-    </div>
-    <div class="themes-row">
-        <button class="theme-pill active" data-theme="all">Tous</button>
-        {% for theme in themes|slice(0, 4) %}
-            <button class="theme-pill" data-theme="{{ theme.nom|lower }}">{{ theme.nom }}</button>
-        {% endfor %}
-    </div>
-    <div class="gallery">
-        {% for photo in privatePhotos %}
-        <div class="media-item" data-photo-id="{{ photo.id }}" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="{{ photo.public ? 'true' : 'false' }}">
-            <div class="mi-img">
-                <label class="sel-checkbox-wrap"><input type="checkbox" class="sel-checkbox" value="{{ photo.id }}"></label>
-                <img src="/uploads/photos/{{ photo.photoUrl }}" alt="{{ photo.description }}" loading="lazy">
-                <div class="mi-hover">
-                    <button class="toggle-info mi-view-btn">Voir détails</button>
-                </div>
-            </div>
-            <p class="photo-desc">{{ photo.description }}</p>
-            <div class="photo-info" style="display:none;">
-                <p><strong>Description :</strong> {{ photo.description }}</p>
-                <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
-                <p><strong>Date :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
-                <p><strong>Thème :</strong> {{ photo.themes|map(t => t.nom)|join(', ') }}</p>
-                <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
-                    <input type="text" name="description" value="{{ photo.description }}" required>
-                    <label><input type="checkbox" name="public" {% if photo.public %}checked{% endif %}> Photo publique</label>
-                    <button type="submit">Enregistrer</button>
-                </form>
-                <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
-                    <button type="submit">Supprimer</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-{# ===== PHOTOS PUBLIQUES ===== #}
-<div id="publicPhotosTab" class="tab-content" style="display:none;">
-    <div class="tab-toolbar">
-        <div class="tab-search-wrap">
-            <div style="position:relative;max-width:480px;width:100%">
-                <div class="tab-search-bar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="searchPublic" placeholder="Rechercher un thème…" oninput="filterTab('publicPhotosTab', this.value, 'msgPublic')">
-                </div>
-                <p id="msgPublic" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
-            </div>
-        </div>
-        <button class="select-toggle-btn" data-tab="publicPhotosTab">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="5" height="5" rx="1"/><rect x="3" y="13" width="5" height="5" rx="1"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="15.5" x2="21" y2="15.5"/></svg>
-            Sélectionner
-        </button>
-    </div>
-    <div class="themes-row">
-        <button class="theme-pill active" data-theme="all">Tous</button>
-        {% for theme in themes|slice(0, 4) %}
-            <button class="theme-pill" data-theme="{{ theme.nom|lower }}">{{ theme.nom }}</button>
-        {% endfor %}
-    </div>
-    <div class="gallery">
-        {% for photo in publicPhotos %}
-        <div class="media-item" data-photo-id="{{ photo.id }}" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="true">
-            <div class="mi-img">
-                <label class="sel-checkbox-wrap"><input type="checkbox" class="sel-checkbox" value="{{ photo.id }}"></label>
-                <img src="/uploads/photos/{{ photo.photoUrl }}" alt="{{ photo.description }}" loading="lazy">
-                <div class="mi-hover">
-                    <button class="toggle-info mi-view-btn">Voir détails</button>
-                </div>
-            </div>
-            <p class="photo-desc">{{ photo.description }}</p>
-            <div class="photo-info" style="display:none;">
-                <p><strong>Description :</strong> {{ photo.description }}</p>
-                <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
-                <p><strong>Date :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
-                <p><strong>Thème :</strong> {{ photo.themes|map(t => t.nom)|join(', ') }}</p>
-                <p><strong>Statut :</strong> Public</p>
-                <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
-                    <input type="text" name="description" value="{{ photo.description }}" required>
-                    <label><input type="checkbox" name="public" checked> Photo publique</label>
-                    <button type="submit">Enregistrer</button>
-                </form>
-                <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
-                    <button type="submit">Supprimer</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-{# ===== ALBUMS ===== #}
-<div id="albumsTab" class="tab-content" style="display:none;">
-    <div class="albums-grid">
-        <div class="album-card album-new-card" id="albumNewCard">
-            <div id="albumNewIdle" class="album-new-idle">
-                <div class="album-new-plus">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-                <span>Nouvel album</span>
-            </div>
-            <div id="albumNewForm" class="album-new-form" style="display:none">
-                <input type="text" id="albumNewInput" class="minput" placeholder="Nom (max 20 car.)" maxlength="20">
-                <p id="albumNewError" style="color:#EF4444;font-size:.78rem;margin-top:4px;display:none"></p>
-                <button id="albumNewSubmit" class="mbtn" style="font-size:.82rem;padding:9px;margin-top:8px">Créer</button>
-                <button id="albumNewCancel" class="abtn-sm" style="margin-top:5px;width:100%">Annuler</button>
-            </div>
-        </div>
-        {% for album in albums %}
-            <div class="album-card" data-id="{{ album.id }}" id="album-card-{{ album.id }}">
-                <div class="album-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
-                </div>
-                <p class="album-name">{{ album.categorie }}</p>
-                <div class="album-actions">
-                    <a href="{{ path('app_view_album', {'id': album.id}) }}" class="abtn-sm" style="text-align:center;text-decoration:none;display:block">Voir photos</a>
-                    <button class="manage-album-btn abtn-sm abtn-outline" data-album-id="{{ album.id }}" data-album-name="{{ album.categorie }}">Gérer</button>
-                    <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
-                        <button type="submit" class="abtn-sm abtn-danger">Supprimer</button>
-                    </form>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-</div>
-
-{# ===== MODALS ===== #}
-
-<div id="addMediaModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="closeModal">✕</button>
-        <h3 class="modal-title">Ajouter une photo</h3>
-        <form id="addMediaForm" action="{{ path('app_upload_photo') }}" method="POST" enctype="multipart/form-data" class="mform">
-            <label class="mlabel">Photo</label>
-            <input type="file" name="photo_file" accept="image/*" required class="minput">
-            <label class="mlabel">Description</label>
-            <input type="text" name="description" class="minput" placeholder="Décrivez votre photo… (optionnel)">
-            <label class="mlabel">Thème</label>
-            <select name="theme_id" class="minput">
-                <option value="">— Choisir un thème —</option>
-                {% for theme in themes %}
-                    <option value="{{ theme.id }}">{{ theme.nom }}</option>
-                {% endfor %}
-            </select>
-            <label class="mcheck"><input type="checkbox" name="public"> Publier en public</label>
-            <p id="uploadError" style="color:#EF4444;font-size:.82rem;margin-top:6px;display:none"></p>
-            <button type="submit" class="mbtn">Publier</button>
-        </form>
-    </div>
-</div>
-
-{# ===== FLOATING SELECTION BAR ===== #}
-<div class="sel-float-bar" id="selFloatBar">
-    <div class="sel-float-top">
-        <div class="sel-float-info">
-            <span class="sel-float-count" id="selFloatCount">0</span>
-            <span class="sel-float-label">photo(s) sélectionnée(s)</span>
-        </div>
-        <div class="sel-float-actions">
-            <button class="sel-float-album-toggle" id="selFloatAlbumToggle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
-                Ajouter à un album
-            </button>
-            <button class="sel-float-delete" id="selFloatDelete">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                Supprimer
-            </button>
-            <button class="sel-float-cancel" id="selFloatCancel">✕</button>
-        </div>
-    </div>
-    <div class="sel-float-album-row" id="selFloatAlbumRow">
-        <select id="selFloatAlbumSelect">
-            <option value="">— Choisir un album —</option>
-            {% for album in albums %}<option value="{{ album.id }}">{{ album.categorie }}</option>{% endfor %}
-        </select>
-        <button id="selFloatAlbumConfirm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Confirmer
-        </button>
-    </div>
-</div>
-
-<div id="themeRequestModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="closeThemeModal">✕</button>
-        <h3 class="modal-title">Demander un thème</h3>
-        <div id="themeError" class="merror"></div>
-        <form id="themeRequestForm" class="mform">
-            <label class="mlabel" for="title">Titre</label>
-            <input type="text" name="title" id="title" required class="minput" placeholder="Nom du thème">
-            <label class="mlabel" for="description">Description</label>
-            <textarea name="description" id="description" required class="minput mtextarea" placeholder="Décrivez ce thème…"></textarea>
-            <button type="submit" class="mbtn">Envoyer</button>
-        </form>
-    </div>
-</div>
-
-<div id="viewAlbumModal" class="modal">
-    <div class="modal-card modal-card-wide">
-        <button class="modal-close" id="closeAlbumPhotosModal">✕</button>
-        <h3 class="modal-title" id="modalAlbumTitle">Photos de l'album</h3>
-        <div id="albumPhotosContainer" class="album-photos-container"></div>
-    </div>
-</div>
-
-<div id="editPhotoModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="closeEditPhotoModal">✕</button>
-        <h3 class="modal-title">Modifier la photo</h3>
-        <form id="editPhotoForm" class="mform">
-            <input type="hidden" name="photo_id" value="">
-            <label class="mlabel">Description</label>
-            <input type="text" name="description" required class="minput">
-            <label class="mcheck"><input type="checkbox" name="public"> Photo publique</label>
-            <button type="submit" class="mbtn">Enregistrer</button>
-        </form>
-    </div>
-</div>
-
-<div id="photoDetailModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="closePhotoDetailModal">✕</button>
-        <h3 class="modal-title">Détails de la photo</h3>
-        <div id="photoDetailContainer"></div>
-    </div>
-</div>
-
-<div id="manageAlbumModal" class="modal">
-    <div class="modal-card modal-card-wide">
-        <button class="modal-close" id="closeManageAlbumModal">✕</button>
-        <h3 class="modal-title">Gérer l'album</h3>
-        <div id="manageAlbumInfos" class="album-infos"></div>
-        <form id="renameAlbumForm" method="POST" class="mform" style="margin-bottom:18px">
-            <label class="mlabel">Renommer l'album <span style="color:#94A3B8;font-weight:400">(max 6 caractères)</span></label>
-            <div style="display:flex;gap:8px">
-                <input type="text" name="categorie" id="renameAlbumInput" maxlength="6" required class="minput" style="flex:1">
-                <button type="submit" class="mbtn" style="width:auto;padding:0 18px;white-space:nowrap">Renommer</button>
-            </div>
-        </form>
-        <hr class="mdivider">
-        <form id="addPhotosToAlbumForm" method="POST" class="mform">
-            <label class="mlabel">Ajouter des photos</label>
-            <p style="font-size:.78rem;color:#94A3B8;margin:4px 0 12px">Seules les photos absentes de l'album sont affichées.</p>
-            <div id="manageAlbumPhotosList" class="album-photos-list"></div>
-            <button type="submit" class="mbtn" style="margin-top:12px">Ajouter les photos cochées</button>
-        </form>
-    </div>
-</div>
+{{ include('product/_tab_albums.html.twig') }}
+{{ include('product/_modals.html.twig') }}
 
 {% endblock %}
 
 {% block javascripts %}
 <script>
-const allThemeNames = [{% for theme in themes %}"{{ theme.nom }}",{% endfor %}];
+const allThemes = [{% for theme in themes %}{id:{{ theme.id }},nom:"{{ theme.nom }}"},{% endfor %}];
+const allThemeNames = allThemes.map(t => t.nom);
 
 function normalize(s) {
     return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -424,6 +124,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const isPublic = parent.querySelector('input[name="public"]')?.checked || false;
             const statut = isPublic ? 'Public' : 'Privé';
 
+            const currentThemeNames = (parent.dataset.theme || '').split(',').filter(Boolean);
+            const themesHtml = allThemes.length ? `
+                <div class="edit-themes-wrap" style="margin-top:10px">
+                    <span class="edit-themes-label">Thèmes :</span>
+                    <div class="edit-themes-list">${allThemes.map(t =>
+                        `<label class="edit-theme-cb"><input type="checkbox" name="theme_ids[]" value="${t.id}"${currentThemeNames.includes(t.nom.toLowerCase()) ? ' checked' : ''}> ${t.nom}</label>`
+                    ).join('')}</div>
+                </div>` : '';
+
             const container = document.getElementById('photoDetailContainer');
             container.innerHTML = `
                 <div class="detail-info">
@@ -436,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <form action="${formActionEdit}" method="POST" class="mform" style="margin-top:14px">
                     <input type="text" name="description" value="${description}" required class="minput">
                     <label class="mcheck"><input type="checkbox" name="public" ${isPublic ? 'checked' : ''}> Photo publique</label>
+                    ${themesHtml}
                     <button type="submit" class="mbtn">Enregistrer</button>
                 </form>
                 <form action="${formActionDelete}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');" style="margin-top:8px">
@@ -509,10 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const renameForm = document.getElementById('renameAlbumForm');
         renameForm.action = `/album/${albumId}/edit`;
         document.getElementById('renameAlbumInput').value = albumName;
-        const addForm = document.getElementById('addPhotosToAlbumForm');
-        addForm.action = `/album/${albumId}/add-photo`;
         document.getElementById('manageAlbumInfos').innerHTML = '<p style="color:#94A3B8;font-size:.85rem">Chargement…</p>';
-        document.getElementById('manageAlbumPhotosList').innerHTML = '';
 
         fetch(`/album/${albumId}/json`)
             .then(res => res.json())
@@ -522,25 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Nom :</strong> ${data.albumName}</p>
                     <p><strong>Nombre de photos :</strong> ${albumPhotoIds.length}</p>
                 `;
-                const photosList = document.getElementById('manageAlbumPhotosList');
-                const photosToShow = allUserPhotos.filter(p => !albumPhotoIds.includes(p.id));
-                if (photosToShow.length === 0) {
-                    photosList.innerHTML = '<p style="font-size:.82rem;color:#94A3B8">Toutes vos photos sont déjà dans cet album.</p>';
-                    return;
-                }
-                photosToShow.forEach(photo => {
-                    const label = document.createElement('label');
-                    label.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:90px;cursor:pointer;font-size:.72rem;text-align:center;gap:4px';
-                    label.innerHTML = `
-                        <div style="position:relative;width:82px;height:82px">
-                            <img src="/uploads/photos/${photo.url}" style="width:82px;height:82px;object-fit:cover;border-radius:10px;border:2px solid #E2E8F0">
-                            <input type="checkbox" name="photo_ids[]" value="${photo.id}" style="position:absolute;top:4px;right:4px;width:16px;height:16px;cursor:pointer">
-                        </div>
-                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:86px;color:#374151">${photo.description}</span>
-                        <span style="color:#7C3AED;font-size:.7rem">${photo.themes}</span>
-                    `;
-                    photosList.appendChild(label);
-                });
             })
             .catch(() => { document.getElementById('manageAlbumInfos').innerHTML = '<p style="color:#EF4444;font-size:.85rem">Erreur de chargement.</p>'; });
     });
@@ -584,7 +272,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const itemThemes = item.dataset.theme.split(',').map(t => t.trim()).filter(Boolean);
                 item.style.display = (theme === 'all' || itemThemes.includes(theme)) ? 'block' : 'none';
             });
+            btn.closest('.theme-more-dropdown')?.closest('.theme-more-wrap')
+                ?.querySelector('.theme-more-dropdown')?.classList.remove('open');
         });
+    });
+
+    /* THEME MORE DROPDOWN */
+    document.querySelectorAll('.theme-more-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = btn.nextElementSibling;
+            const isOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('.theme-more-dropdown.open').forEach(d => d.classList.remove('open'));
+            if (!isOpen) dropdown.classList.add('open');
+        });
+    });
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.theme-more-dropdown.open').forEach(d => d.classList.remove('open'));
     });
 
     /* FERMER MODALS EN CLIQUANT EN DEHORS */
@@ -836,10 +540,41 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .tab-search-bar input::placeholder{color:#CBD5E1}
 
 /* THEMES ROW */
-.themes-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:12px 24px}
-.theme-pill{padding:6px 16px;border-radius:50px;border:1.5px solid #E2E8F0;background:#fff;font-size:.8rem;font-weight:500;color:#374151;cursor:pointer;transition:all .2s;font-family:inherit}
-.theme-pill:hover{border-color:#7C3AED;color:#7C3AED}
-.theme-pill.active{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border-color:transparent}
+.themes-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 24px}
+.theme-pill{padding:7px 18px;border-radius:50px;border:1.5px solid #E2E8F0;background:#fff;font-size:.82rem;font-weight:500;color:#374151;cursor:pointer;transition:all .22s;font-family:inherit}
+.theme-pill:hover{border-color:#7C3AED;color:#7C3AED;transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.12)}
+.theme-pill.active{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(124,58,237,.3)}
+
+/* Featured top-4 pills */
+.theme-pill-featured{
+    background:linear-gradient(#fff,#fff) padding-box,
+               linear-gradient(135deg,#78c8eb,#7C3AED) border-box;
+    border:1.5px solid transparent;
+    color:#5B21B6;font-weight:600;
+    display:inline-flex;align-items:center;gap:7px;
+    box-shadow:0 2px 10px rgba(124,58,237,.1)
+}
+.theme-pill-featured:hover{
+    background:linear-gradient(135deg,#78c8eb,#7C3AED);
+    color:#fff;border-color:transparent;
+    box-shadow:0 6px 18px rgba(124,58,237,.3);transform:translateY(-2px)
+}
+.theme-pill-featured.active{
+    background:linear-gradient(135deg,#78c8eb,#7C3AED);
+    color:#fff;border-color:transparent;
+    box-shadow:0 6px 18px rgba(124,58,237,.3)
+}
+.pill-count{font-size:.68rem;background:rgba(124,58,237,.1);color:#7C3AED;padding:2px 8px;border-radius:50px;font-weight:700;transition:background .2s,color .2s;line-height:1.4}
+.theme-pill-featured:hover .pill-count,.theme-pill-featured.active .pill-count{background:rgba(255,255,255,.25);color:#fff}
+
+/* More dropdown */
+.theme-more-wrap{position:relative}
+.theme-more-btn{padding:7px 13px;border-radius:50px;border:1.5px dashed #C4B5FD;background:#F5F3FF;font-size:.78rem;font-weight:700;color:#7C3AED;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:4px}
+.theme-more-btn:hover{border-color:#7C3AED;background:#EDE9FE;transform:translateY(-1px)}
+.theme-more-arrow{font-size:.62rem}
+.theme-more-dropdown{position:absolute;top:calc(100% + 8px);left:0;z-index:200;background:#fff;border:1.5px solid #E2E8F0;border-radius:16px;padding:12px;box-shadow:0 12px 32px rgba(15,23,42,.12);min-width:190px;display:none;flex-wrap:wrap;gap:7px}
+.theme-more-dropdown.open{display:flex}
+.theme-more-dropdown .theme-pill{font-size:.78rem;padding:6px 14px}
 
 /* GALLERY MASONRY */
 .gallery{columns:4 180px;column-gap:14px;padding:8px 24px 60px}
@@ -855,6 +590,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .badge-private{position:absolute;top:8px;left:8px;background:#EF4444;color:#fff;padding:2px 8px;border-radius:50px;font-size:.72rem;font-weight:600}
 .photo-desc{padding:8px 12px;font-size:.82rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .photo-info{display:none}
+.edit-themes-wrap{margin:8px 0 6px}
+.edit-themes-label{font-size:.78rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.edit-themes-list{display:flex;flex-wrap:wrap;gap:6px}
+.edit-theme-cb{display:flex;align-items:center;gap:5px;font-size:.8rem;color:#374151;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:20px;padding:4px 10px;cursor:pointer;transition:all .2s}
+.edit-theme-cb:has(input:checked){background:#EEF2FF;border-color:#7C3AED;color:#7C3AED;font-weight:600}
+.edit-theme-cb input{accent-color:#7C3AED;width:13px;height:13px}
 
 /* ALBUMS */
 .albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;padding:8px 24px 60px}

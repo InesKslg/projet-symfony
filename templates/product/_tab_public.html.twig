@@ -1,0 +1,74 @@
+<div id="publicPhotosTab" class="tab-content" style="display:none;">
+    <div class="tab-toolbar">
+        <div class="tab-search-wrap">
+            <div style="position:relative;max-width:480px;width:100%">
+                <div class="tab-search-bar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchPublic" placeholder="Rechercher un thème…" oninput="filterTab('publicPhotosTab', this.value, 'msgPublic')">
+                </div>
+                <p id="msgPublic" style="display:none;position:absolute;top:calc(100% + 5px);left:14px;font-size:.8rem;color:#EF4444;font-weight:500">Thème introuvable</p>
+            </div>
+        </div>
+        <button class="select-toggle-btn" data-tab="publicPhotosTab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="5" height="5" rx="1"/><rect x="3" y="13" width="5" height="5" rx="1"/><line x1="12" y1="6.5" x2="21" y2="6.5"/><line x1="12" y1="15.5" x2="21" y2="15.5"/></svg>
+            Sélectionner
+        </button>
+    </div>
+    <div class="themes-row">
+        <button class="theme-pill active" data-theme="all">Tous</button>
+        {% for t in topThemes %}
+            <button class="theme-pill theme-pill-featured" data-theme="{{ t.nom|lower }}">{{ t.nom }}</button>
+        {% endfor %}
+        {% set topIds = topThemes|map(t => t.id) %}
+        {% set remaining = themes|length - topThemes|length %}
+        {% if remaining > 0 %}
+        <div class="theme-more-wrap">
+            <button class="theme-more-btn">+{{ remaining }} <span class="theme-more-arrow">▾</span></button>
+            <div class="theme-more-dropdown">
+                {% for theme in themes %}
+                    {% if theme.id not in topIds %}
+                        <button class="theme-pill" data-theme="{{ theme.nom|lower }}">{{ theme.nom }}</button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="gallery">
+        {% for photo in publicPhotos %}
+        <div class="media-item" data-photo-id="{{ photo.id }}" data-theme="{{ photo.themes|map(t => t.nom)|join(',')|lower }}" data-public="true">
+            <div class="mi-img">
+                <label class="sel-checkbox-wrap"><input type="checkbox" class="sel-checkbox" value="{{ photo.id }}"></label>
+                <img src="/uploads/photos/{{ photo.photoUrl }}" alt="{{ photo.description }}" loading="lazy">
+                <div class="mi-hover">
+                    <button class="toggle-info mi-view-btn">Voir détails</button>
+                </div>
+            </div>
+            <p class="photo-desc">{{ photo.description }}</p>
+            <div class="photo-info" style="display:none;">
+                <p><strong>Description :</strong> {{ photo.description }}</p>
+                <p><strong>Localisation :</strong> {{ photo.localisation ?: 'Non renseignée' }}</p>
+                <p><strong>Date :</strong> {{ photo.datePrise ? photo.datePrise|date('d/m/Y') : 'Non renseignée' }}</p>
+                <p><strong>Thème :</strong> {{ photo.themes|map(t => t.nom)|join(', ') }}</p>
+                <p><strong>Statut :</strong> Public</p>
+                <form action="{{ path('app_edit_photo', {'id': photo.id}) }}" method="POST">
+                    <input type="text" name="description" value="{{ photo.description }}" required>
+                    <label><input type="checkbox" name="public" checked> Photo publique</label>
+                    <div class="edit-themes-wrap">
+                        <span class="edit-themes-label">Thèmes :</span>
+                        <div class="edit-themes-list">
+                        {% for theme in themes %}
+                            <label class="edit-theme-cb"><input type="checkbox" name="theme_ids[]" value="{{ theme.id }}" {% if photo.themes.contains(theme) %}checked{% endif %}> {{ theme.nom }}</label>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <form action="{{ path('app_delete_photo', {'id': photo.id}) }}" method="POST" onsubmit="return confirm('Supprimer cette photo ?');">
+                    <button type="submit">Supprimer</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

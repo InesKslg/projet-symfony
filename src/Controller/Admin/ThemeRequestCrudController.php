@@ -5,17 +5,13 @@ namespace App\Controller\Admin;
 use App\Entity\ThemeRequest;
 use App\Entity\Notification;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -36,7 +32,9 @@ class ThemeRequestCrudController extends AbstractCrudController
             TextField::new('title', 'Titre'),
             TextField::new('description', 'Description')->onlyOnIndex(),
             TextEditorField::new('description', 'Description')->onlyOnDetail(),
-            TextField::new('status', 'Statut'),
+            ChoiceField::new('status', 'Statut')
+                ->setChoices(['En attente' => 'pending', 'Validée' => 'accepted'])
+                ->renderAsBadges(['pending' => 'warning', 'accepted' => 'success']),
             AssociationField::new('requestedBy', 'Utilisateur'),
         ];
     }
@@ -60,20 +58,22 @@ class ThemeRequestCrudController extends AbstractCrudController
         /** @var ThemeRequest $request */
         $request = $context->getEntity()->getInstance();
 
-        // Mise à jour du statut de la demande
         $request->setStatus('accepted');
 
-        // Empêche la création de doublons de notifications
+        $title   = $request->getTitle();
+        $message = "Votre demande de th\u{00E8}me \u{00AB} {$title} \u{00BB} a \u{00E9}t\u{00E9} valid\u{00E9}e !";
+
         $existing = $em->getRepository(Notification::class)->findOneBy([
             'recipient' => $request->getRequestedBy(),
-            'message' => "Votre demande de thème « {$request->getTitle()} » a été validée !"
+            'message'   => $message,
+            'isRead'    => false,
         ]);
 
         if (!$existing) {
             $notif = new Notification();
-            $notif->setRecipient($request->getRequestedBy());
-            $notif->setMessage("Votre demande de thème « {$request->getTitle()} » a été validée !");
-            $notif->setIsRead(false);
+            $notif->setRecipient($request->getRequestedBy())
+                  ->setMessage($message)
+                  ->setIsRead(false);
             $em->persist($notif);
         }
 
@@ -90,18 +90,4 @@ class ThemeRequestCrudController extends AbstractCrudController
         return $this->redirect($url);
     }
 
-    // Affiche uniquement les demandes en attente
-    public function createIndexQueryBuilder(
-        SearchDto $searchDto,
-        EntityDto $entityDto,
-        FieldCollection $fields,
-        FilterCollection $filters
-    ): QueryBuilder {
-        $qb = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
-
-        $qb->andWhere('entity.status = :status')
-           ->setParameter('status', 'pending');
-
-        return $qb;
-    }
 }

@@ -1,0 +1,33 @@
+<div id="albumsTab" class="tab-content" style="display:none;">
+    <div class="albums-grid">
+        <div class="album-card album-new-card" id="albumNewCard">
+            <div id="albumNewIdle" class="album-new-idle">
+                <div class="album-new-plus">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+                <span>Nouvel album</span>
+            </div>
+            <div id="albumNewForm" class="album-new-form" style="display:none">
+                <input type="text" id="albumNewInput" class="minput" placeholder="Nom (max 20 car.)" maxlength="20">
+                <p id="albumNewError" style="color:#EF4444;font-size:.78rem;margin-top:4px;display:none"></p>
+                <button id="albumNewSubmit" class="mbtn" style="font-size:.82rem;padding:9px;margin-top:8px">Créer</button>
+                <button id="albumNewCancel" class="abtn-sm" style="margin-top:5px;width:100%">Annuler</button>
+            </div>
+        </div>
+        {% for album in albums %}
+            <div class="album-card" data-id="{{ album.id }}" id="album-card-{{ album.id }}">
+                <div class="album-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+                </div>
+                <p class="album-name">{{ album.categorie }}</p>
+                <div class="album-actions">
+                    <a href="{{ path('app_view_album', {'id': album.id}) }}" class="abtn-sm" style="text-align:center;text-decoration:none;display:block">Voir photos</a>
+                    <button class="manage-album-btn abtn-sm abtn-outline" data-album-id="{{ album.id }}" data-album-name="{{ album.categorie }}">Gérer</button>
+                    <form action="{{ path('app_delete_album', {'id': album.id}) }}" method="POST" onsubmit="return confirm('Supprimer cet album ?');">
+                        <button type="submit" class="abtn-sm abtn-danger">Supprimer</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

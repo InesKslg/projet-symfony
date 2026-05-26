@@ -14,18 +14,31 @@
         <p id="searchMessage">Thème introuvable</p>
     </div>
     <nav class="header-nav">
+        {% if app.user %}
+        <a href="{{ path('app_welcome') }}" class="nav-btn nav-outline">Mon espace</a>
+        <a href="{{ path('app_logout') }}" class="nav-btn nav-primary" id="logoutBtn">Se déconnecter</a>
+        {% else %}
         <a href="{{ path('app_register') }}" class="nav-btn nav-primary">S'inscrire</a>
         <a href="{{ path('app_login') }}" class="nav-btn nav-outline">Connexion</a>
+        {% endif %}
     </nav>
 </header>
 
 <div class="themes-bar">
     <button class="theme-pill active" data-theme="all">Tous</button>
-    {% for theme in recentThemes %}
-        <button class="theme-pill" data-theme="{{ theme.id }}">
-            {{ theme.nom }}
-        </button>
+    {% for t in topThemes %}
+        <button class="theme-pill theme-pill-featured" data-theme="{{ t.id }}">{{ t.nom }}</button>
     {% endfor %}
+    {% if otherThemes|length > 0 %}
+    <div class="theme-more-wrap">
+        <button class="theme-more-btn" id="homeMoreBtn">+{{ otherThemes|length }} <span class="theme-more-arrow">▾</span></button>
+        <div class="theme-more-dropdown" id="homeMoreDropdown">
+            {% for t in otherThemes %}
+                <button class="theme-pill" data-theme="{{ t.id }}">{{ t.nom }}</button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <div id="photo-grid">
@@ -147,6 +160,24 @@ searchInput.addEventListener("keydown", e=>{if(e.key==="Enter") searchTheme()})
 searchBtn.addEventListener("click", searchTheme)
 
 showPhotos()
+
+const moreBtn = document.getElementById('homeMoreBtn')
+const moreDropdown = document.getElementById('homeMoreDropdown')
+if (moreBtn && moreDropdown) {
+    moreBtn.addEventListener('click', e => {
+        e.stopPropagation()
+        const open = moreDropdown.classList.contains('open')
+        moreDropdown.classList.toggle('open', !open)
+    })
+    document.addEventListener('click', () => moreDropdown.classList.remove('open'))
+}
+
+{% if app.user %}
+;(function(){
+    const logoutUrl = '{{ path("app_logout") }}'
+    setTimeout(function(){ window.location.href = logoutUrl }, 60000)
+})()
+{% endif %}
 </script>
 
 {% endblock %}
@@ -180,10 +211,35 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .nav-outline:hover{background:#7C3AED;color:#fff}
 
 /* THEMES BAR */
-.themes-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:88px 32px 20px}
-.theme-pill{padding:8px 20px;border-radius:50px;border:1.5px solid #E2E8F0;background:#fff;font-size:.85rem;font-weight:500;color:#374151;cursor:pointer;transition:all .2s;font-family:inherit}
-.theme-pill:hover{border-color:#7C3AED;color:#7C3AED}
-.theme-pill.active{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border-color:transparent;font-weight:600}
+.themes-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:88px 32px 20px;align-items:center}
+.theme-pill{padding:8px 20px;border-radius:50px;border:1.5px solid #E2E8F0;background:#fff;font-size:.85rem;font-weight:500;color:#374151;cursor:pointer;transition:all .22s;font-family:inherit}
+.theme-pill:hover{border-color:#7C3AED;color:#7C3AED;transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.12)}
+.theme-pill.active{background:linear-gradient(135deg,#78c8eb,#7C3AED);color:#fff;border-color:transparent;font-weight:600;box-shadow:0 4px 14px rgba(124,58,237,.3)}
+.theme-pill-featured{
+    background:linear-gradient(#fff,#fff) padding-box,
+               linear-gradient(135deg,#78c8eb,#7C3AED) border-box;
+    border:1.5px solid transparent;
+    color:#5B21B6;font-weight:700;
+    display:inline-flex;align-items:center;gap:8px;
+    box-shadow:0 2px 12px rgba(124,58,237,.12)
+}
+.theme-pill-featured:hover{
+    background:linear-gradient(135deg,#78c8eb,#7C3AED);
+    color:#fff;border-color:transparent;
+    box-shadow:0 6px 20px rgba(124,58,237,.32);transform:translateY(-2px)
+}
+.theme-pill-featured.active{
+    background:linear-gradient(135deg,#78c8eb,#7C3AED);
+    color:#fff;border-color:transparent;
+    box-shadow:0 6px 20px rgba(124,58,237,.32)
+}
+.theme-more-wrap{position:relative}
+.theme-more-btn{padding:8px 14px;border-radius:50px;border:1.5px dashed #C4B5FD;background:#F5F3FF;font-size:.8rem;font-weight:700;color:#7C3AED;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;transition:all .2s}
+.theme-more-btn:hover{border-color:#7C3AED;background:#EDE9FE;transform:translateY(-1px)}
+.theme-more-arrow{font-size:.62rem}
+.theme-more-dropdown{position:absolute;top:calc(100% + 8px);left:0;z-index:300;background:#fff;border:1.5px solid #E2E8F0;border-radius:16px;padding:12px;box-shadow:0 12px 32px rgba(15,23,42,.12);min-width:190px;display:none;flex-wrap:wrap;gap:7px}
+.theme-more-dropdown.open{display:flex}
+.theme-more-dropdown .theme-pill{font-size:.78rem;padding:6px 14px}
 
 /* MASONRY GRID */
 #photo-grid{columns:4 230px;column-gap:16px;padding:8px 32px 80px}
