@@ -64,6 +64,7 @@ class Photos
     private ?\DateTimeImmutable $date_added = null;
 
     #[ORM\ManyToOne(inversedBy: 'photos')]
+    #[ORM\JoinColumn(name: "user_photo_id", referencedColumnName: "id", nullable: true)]
     #[Groups(['photo:read', 'photo:write'])]
     private ?User $userPhoto = null;
 
